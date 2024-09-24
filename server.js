@@ -1,4 +1,5 @@
-import app from "./api/app.js";
+
+const app = require('./app.js'); // Adjust the path as needed
 
 const port = 8080;
 app.listen(port, () => {
