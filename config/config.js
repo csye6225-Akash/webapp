@@ -9,7 +9,7 @@ const config = {
         password: process.env.devPassword,
         database: process.env.devDB,
         host: process.env.devHost,
-        dialect: 'mysql' // Ensure to wrap dialect in quotes
+        dialect: 'mysql' 
     }
 };
 
