@@ -6,7 +6,7 @@ const Sequelize = require('sequelize');
 const process = require('process');
 const configData = require('../config/config.js');
 
-// Use the existing __filename and __dirname provided by Node.js
+ //Use the existing __filename and __dirname provided by Node.js
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 
