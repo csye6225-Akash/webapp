@@ -22,7 +22,7 @@ The application should not require a restart between API calls
 Git & GitHub Repository
 Git Repository Content Check (20%)
 Check the repository for any IDE-specific files. IDE configuration files must not be in the repository.
-Verify their .gitignore configuration.
+Verify their .gitignore configuration.chekc
 Check the repository for build artifacts such as .class, .jar, .war files and build, node_modules, venv directory. None of these should be checked into the repository.
 Check for dependencies. Dependencies from the Maven repository, npm, or Python should not be committed to the git repository.
 Git Forking Workflow (20%)
