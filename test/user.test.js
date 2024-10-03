@@ -7,25 +7,28 @@ const { expect } = chai;
 
 describe('User API Tests', () => {
     let userId;
-
+  
+    
     before((done) => {
-        
-        done();
+      
+      done();
     });
-
+  
     it('should create a new user successfully', (done) => {
-        chai.request(app)
-            .post('/v1/user')
-            .send({
-                email: 'tes456t1@exmple.com',
-                password: 'Password@123',
-                first_name: 'Test',
-                last_name: 'User'
-            })
-            .end((err, res) => {
-                expect(res).to.have.status(201);
-                userId = res.body.id; 
-            });
+      chai.request(app)
+        .post('/v1/user')
+        .send({
+          email: 's456t1@exmple.com',
+          password: 'Password@123',
+          first_name: 'Test',
+          last_name: 'User'
+        })
+        .end((err, res) => {
+          if (err) done(err); 
+          expect(res).to.have.status(201);
+          userId = res.body.id; 
+          done(); // test will end here
+        });
     });
 
     it('should not create a user with an invalid email', (done) => {
