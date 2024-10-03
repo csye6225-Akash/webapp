@@ -29,7 +29,36 @@ app.all('/v1/user/self', (req, res, next) => {
   next();
 });
 
-  
+let dbConnected = false; 
+
+
+const checkDatabaseConnection = (req, res, next) => {
+  if (!dbConnected) {
+    return res.status(503).json({ error: 'Service Unavailable. Database not connected.' });
+  }
+  next();
+};
+
+
+app.use(checkDatabaseConnection);
+
+
+const checkConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connection has been established successfully.');
+    await sequelize.sync(); 
+    dbConnected = true; 
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    dbConnected = false; 
+  }
+};
+checkConnection();
+
+
+setInterval(checkConnection, 5000); // checking every 5 seconds
+
 
 
 
@@ -46,16 +75,7 @@ app.use((req, res, next) => {
 
 
 
-const checkConnection = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('Connection has been established successfully.');
-    await sequelize.sync(); 
-  } catch (error) {
-    console.error('Unable to connect to the database:', error);
-  }
-};
-checkConnection();
+
 
 
 app.use("/healthz", health_route);
