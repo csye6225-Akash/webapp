@@ -32,15 +32,10 @@ app.all('/v1/user/self', (req, res, next) => {
 let dbConnected = false; 
 
 
-const checkDatabaseConnection = (req, res, next) => {
-  if (!dbConnected) {
-    return res.status(503).json({ error: 'Service Unavailable. Database not connected.' });
-  }
-  next();
-};
 
 
-app.use(checkDatabaseConnection);
+
+
 
 
 const checkConnection = async () => {
@@ -57,9 +52,9 @@ const checkConnection = async () => {
 checkConnection();
 
 
-setInterval(checkConnection, 5000); // checking every 5 seconds
+//setInterval(checkConnection, 5000); // checking every 5 seconds
 
-
+module.exports = { app, dbConnected };
 
 
 app.use(express.json());
@@ -174,7 +169,14 @@ app.post('/v1/user', async (req, res) => {
       return res.status(400).json({ error: 'Account with this email already exists' });
     }
 
-    
+    const checkDatabaseConnection = (req, res, next) => {
+      if (!dbConnected) {
+        return res.status(503).json({ error: 'Service Unavailable. Database not connected.' });
+      }
+      next();
+    };
+
+    app.use(checkDatabaseConnection);
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
