@@ -27,3 +27,4 @@ Check the repository for build artifacts such as .class, .jar, .war files and bu
 Check for dependencies. Dependencies from the Maven repository, npm, or Python should not be committed to the git repository.
 Git Forking Workflow (20%)
 No direct commits are made to the organization repository. Verify that the student is working from a forked repository and using the feature branch. There should be no direct commits to their main branch in their forked repository.
+command to test - npx mocha test/user.test.js
