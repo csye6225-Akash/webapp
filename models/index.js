@@ -21,7 +21,7 @@ if (config.use_env_variable) {
     sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
-// Read all files in the current directory, excluding certain files
+
 fs.readdirSync(__dirname)
     .filter(file => {
         return (

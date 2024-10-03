@@ -97,46 +97,51 @@ app.post('/v1/user', async (req, res) => {
   try {
     const { email, password, first_name, last_name } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+  }
+
     if (typeof email !== 'string') {
       return res.status(400).json({ error: 'Email must be a string' });
     }
+    if (!password) {
+      return res.status(400).json({ error: 'Password is Required' });
+  }
     if (typeof password !== 'string') {
       return res.status(400).json({ error: 'Password must be a string' });
     }
+    if (!first_name) {
+      return res.status(400).json({ error: 'First Name is Required' });
+  }
     if (typeof first_name !== 'string') {
       return res.status(400).json({ error: 'First Name must be a string' });
     }
+    if (!last_name) {
+      return res.status(400).json({ error: 'Last Name is Required' });
+  }
     if (typeof last_name !== 'string') {
       return res.status(400).json({ error: 'Last Name must be a string' });
     }
 
     
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-  }
+   
 
     if (!validator.isEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    if (!first_name) {
-      return res.status(400).json({ error: 'First Name is Required' });
-  }
+  
 
     if (!first_name || !validator.isAlpha(first_name)) {
       return res.status(400).json({ error: 'First name should contain only letters' });
     }
-    if (!last_name) {
-      return res.status(400).json({ error: 'Last Name is Required' });
-  }
+  
     if (!last_name || !validator.isAlpha(last_name)) {
       return res.status(400).json({ error: 'Last name should contain only letters' });
     }
 
-    if (!password) {
-      return res.status(400).json({ error: 'Password is Required' });
-  }
+  
 
     if (!isValidPassword(password)) {
       return res.status(400).json({
