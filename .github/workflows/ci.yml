@@ -24,13 +24,14 @@ jobs:
     - name: Display .env file
       run: |
 
-        echo "MYSQL_USER = root" >> .env
+        echo "DEVUSERNAME = ${secrets.DEVUSERNAME}" >> .env
 
-        echo "MYSQL_PASSWORD = root" >> .env
+        echo "DEVPASSWORD = ${secrets.DEVPASSWORD}" >> .env
 
-        echo "MYSQL_DATABASE = database_development" >> .env
+        echo "DEVDB = ${secrets.DEVDB}" >> .env
 
-        echo "PORT=8080" >> .env
+        echo "PORT=${secrets.PORT}" >> .env
+        echo "DEVHOST=${secrets.DEVHOST}" >> .env
 
         cat .env
 
