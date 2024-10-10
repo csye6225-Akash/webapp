@@ -76,45 +76,51 @@ jobs:
   build:
     name: CI
     runs-on: ubuntu-latest
-    env:  # Set the environment variables here
+
+    env:
       DEVUSERNAME: ${{ secrets.DEVUSERNAME }}
-      DEVPASSWORD: ${{ secrets.DEVPASSWORD }}
-      DEVDB: database_development
-      DEVHOST: localhost
-      PORT: 8080
+      DEVPASSWORD: "root"
+      DEVDB: "database_development"
+      DEVHOST: "localhost"
+      MYSQL_ROOT_PASSWORD: "root"
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: 14
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install dependencies
+      run: npm install
 
-      - name: Display .env file
-        run: |
-          touch .env
-          echo DEVUSERNAME=${{ env.DEVUSERNAME }} >> .env
-          echo DEVPASSWORD=${{ env.DEVPASSWORD }} >> .env
-          echo DEVDB=${{ env.DEVDB }} >> .env
-          echo PORT=${{ env.PORT }} >> .env
-          echo DEVHOST=${{ env.DEVHOST }} >> .env
-          cat .env
+    - name: Display .env file
+      run: |
+        touch .env
+        echo DEVUSERNAME="${{ secrets.DEVUSERNAME }}" >> .env
+        echo DEVPASSWORD="${{ env.DEVPASSWORD }}" >> .env
+        echo DEVDB="${{ env.DEVDB }}" >> .env
+        echo PORT="${{ secrets.PORT }}" >> .env
+        echo DEVHOST="${{ env.DEVHOST }}" >> .env
+        cat .env
 
-      - name: Configure MySQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-server
-          sudo systemctl start mysql
-          sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${DEVDB};"
-          sudo mysql -e "CREATE USER IF NOT EXISTS '${DEVUSERNAME}'@'localhost' IDENTIFIED BY '${DEVPASSWORD}';"
-          sudo mysql -e "GRANT ALL PRIVILEGES ON ${DEVDB}.* TO '${DEVUSERNAME}'@'localhost';"
-          sudo mysql -e "FLUSH PRIVILEGES;"
+    - name: Start and configure MySQL
+      run: |
+        # Start the MySQL service
+        sudo systemctl start mysql
 
-      - name: Run Tests
-        run: |
-          npx mocha --exit --timeout 10000 test/workflow.test.js
+        # Ensure MySQL is running
+        sudo systemctl status mysql
+
+        # Connect to MySQL and configure the database
+        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "CREATE DATABASE IF NOT EXISTS ${DEVDB};"
+        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "CREATE USER IF NOT EXISTS '${DEVUSERNAME}'@'localhost' IDENTIFIED BY '${DEVPASSWORD}';"
+        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "GRANT ALL PRIVILEGES ON ${DEVDB}.* TO '${DEVUSERNAME}'@'localhost';"
+        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "FLUSH PRIVILEGES;"
+
+    - name: Run Tests
+      run: |
+        # Run your tests using Mocha
+        npx mocha --exit --timeout 10000 test/workflow.test.js
