@@ -26,7 +26,7 @@ jobs:
 
         echo "DEVUSERNAME = root" >> .env
 
-        echo "DEVPASSWORD = ${{secrets.DEVPASSWORD}}" >> .env
+        echo "DEVPASSWORD = root" >> .env
 
         echo "DEVDB = ${{secrets.DEVDB}}" >> .env
 
