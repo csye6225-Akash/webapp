@@ -49,9 +49,13 @@ jobs:
 
         sudo systemctl status mysql
 
+        mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
+
         sudo mysql -e "GRANT ALL ON *.* TO '${{secrets.DEVUSERNAME}}'@'localhost' IDENTIFIED BY '${{secrets.DEVPASSWORD}}';"
 
-        mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
+        sudo mysql -e "FLUSH PRIVILEGES;"
+
+        
 
  
 
