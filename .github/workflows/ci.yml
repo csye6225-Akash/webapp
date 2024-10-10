@@ -10,10 +10,11 @@ jobs:
     name: CI
     runs-on: ubuntu-latest
     env:
-      MYSQL_USER: ${{ secrets.MYSQL_USER }}
-      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-      PORT: ${{ secrets.PORT }}
+      devUsername: ${{ secrets.MYSQL_USER }}
+      devPassword: ${{ secrets.MYSQL_PASSWORD }}
+      devDb: ${{ secrets.MYSQL_DATABASE }}
+      devHost: ${{ secrets.MYSQL_HOST }}
+      
       
     steps:
       - name: Checkout code
@@ -29,10 +30,10 @@ jobs:
 
       - name: Display environment variables
         run: |
-          echo "MYSQL_USER = $MYSQL_USER" >> .env
-          echo "MYSQL_PASSWORD = $MYSQL_PASSWORD" >> .env
-          echo "MYSQL_DATABASE = $MYSQL_DATABASE" >> .env
-          echo "PORT = $PORT" >> .env
+          echo "devUsername = $MYSQL_USER" >> .env
+          echo "devPassword = $MYSQL_PASSWORD" >> .env
+          echo "devDB = $MYSQL_DATABASE" >> .env
+          echo "devHost: ${{ secrets.MYSQL_HOST }}" >>.env"
           cat .env
 
       - name: Configure MySQL
