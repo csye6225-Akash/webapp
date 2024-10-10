@@ -21,19 +21,19 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Display .env file
-      run: |
+    # - name: Display .env file
+    #   run: |
 
-        echo "DEVUSERNAME = root" >> .env
+    #     echo "DEVUSERNAME = root" >> .env
 
-        echo "DEVPASSWORD = root" >> .env
+    #     echo "DEVPASSWORD = root" >> .env
 
-        echo "DEVDB = database_development" >> .env
+    #     echo "DEVDB = database_development" >> .env
 
-        echo "PORT=${{secrets.PORT}}" >> .env
-        echo "DEVHOST=${{secrets.DEVHOST}}" >> .env
+    #     echo "PORT=${{secrets.PORT}}" >> .env
+    #     echo "DEVHOST=${{secrets.DEVHOST}}" >> .env
 
-        cat .env
+    #     cat .env
 
        
 
