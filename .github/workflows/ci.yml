@@ -13,10 +13,10 @@ jobs:
 
     env:
       DEVUSERNAME: ${{ secrets.DEVUSERNAME }}
-      DEVPASSWORD: "root"
-      DEVDB: "database_development"
-      DEVHOST: "localhost"
-      MYSQL_ROOT_PASSWORD: "root"
+      DEVPASSWORD: ${{ secrets.DEVPASSWORD }}
+      DEVDB: ${{ secrets.DEVPDB }}
+      DEVHOST: ${{ secrets.DEVHOST }}
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
       
 
     steps:
@@ -58,4 +58,4 @@ jobs:
     - name: Run Tests
       run: |
         # Run your tests using Mocha
-        npx mocha --exit --timeout 10000 test/workflow.test.js
+        npx mocha --exit --timeout 10000 test/user.test.js
