@@ -62,4 +62,4 @@ jobs:
 
     - name: Run Tests
       run : |
-        npx mocha test/workflow.test.js
+       npx mocha --exit --timeout 10000 test/workflow.test.js
