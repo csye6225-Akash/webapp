@@ -7,60 +7,56 @@ on:
  
 jobs:
   build:
-    name: Continuous Integration Test
+    name: CI
     runs-on: ubuntu-latest
-   
- 
-    services:
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ROOT_PASSWORD: ${{secrets.DEVPASSWORD}}
-          MYSQL_DATABASE: ${{secrets.DEVDB}}
-          MYSQL_USER: ${{secrets.DEVUSERNAME}}
-          MYSQL_PASSWORD: ${{secrets.DEVPASSWORD}}
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
- 
     steps:
-      - name: Checkout to our code
-        uses: actions/checkout@v3
- 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20.x"
- 
-      - name: Install Dependencies
-        run: npm i
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+    - name: Install dependencies
+      run: npm install
+
+    - name: Display .env file
+      run: |
+
+        echo "MYSQL_USER = root" >> .env
+
+        echo "MYSQL_PASSWORD = root" >> .env
+
+        echo "MYSQL_DATABASE = database_development" >> .env
+
+        echo "PORT=8080" >> .env
+
+        cat .env
+
        
+
+    - name: configuremysql
+
+      run: |
+
+        sudo apt-get update
+
+        sudo apt-get install -y curl
+
+        sudo systemctl start mysql
+
+        sudo systemctl status mysql
+
+        mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
+
  
-      - name: Configure Environment Variables
-        run: |
-          echo DB_USER=${{ secrets.DEVUSERNAME }}
-          echo DB_PASSWORD=${{ secrets.DEVPASSWORD }}
-          echo DB_NAME=${{ secrets.DEVDB }}
-          echo DB_HOST=${{ secrets.DEVHOST }}
-          echo PORT=${{ secrets.PORT }}
+
+  #  asd
+
  
-      - name: Wait for MySQL
-        run: |
-          until mysqladmin ping -h "127.0.0.1" --silent; do
-            echo "Waiting for MySQL to be ready..."
-            sleep 5
-          done
- 
-      - name: Run Test
-        run: npm test -- --forceExit
-        env:
-          PORT: ${{secrets.PORT}}
-          DB_NAME: ${{secrets.DEVDB}}
-          DB_PASSWORD: ${{secrets.DEVPASSWORD}}
-          DB_USER: ${{secrets.DEVUSERNAME}}
-          DB_HOST: ${{secrets.DEVHOST}}
- 
+
+    - name: Run Tests
+      run : |
+        npx sequelize db:migrate
+        npm test
