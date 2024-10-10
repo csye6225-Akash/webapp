@@ -79,10 +79,12 @@ jobs:
 
     env:
       DEVUSERNAME: ${{ secrets.DEVUSERNAME }}
-      DEVPASSWORD: "root"
+      DEVPASSWORD: ${{ secrets.DEVPASSWORD }}  
       DEVDB: "database_development"
       DEVHOST: "localhost"
-      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      
+
 
     steps:
     - name: Checkout code
