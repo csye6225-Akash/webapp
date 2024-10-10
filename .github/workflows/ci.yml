@@ -1,60 +1,48 @@
-name: CI
-
+name: integration-test
 
 on:
   pull_request:
     branches:
-      - main  
+      - main
 
 jobs:
-  test:
-    runs-on: ubuntu-latest  
-
-    services:
-      mysql:
-        image: mysql:5.7  
-        ports:
-          - 3306:3306  
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }} 
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}  # Name of the database
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}  # MySQL username
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}  # MySQL user password
-        options: >-
-          --health-cmd "mysqladmin ping -h localhost -u root --silent"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 3
-
+  build:
+    name: CI
+    runs-on: ubuntu-latest
+    env:
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      PORT: ${{ secrets.PORT }}
+      
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2  
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14' 
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
 
-    - name: Install dependencies
-      run: npm install  
+      - name: Install dependencies
+        run: npm install
 
-    - name: Create .env file
-      run: |
-        echo "Creating .env file"
-        echo "devUsername=root" >> .env
-        echo "devPassword=${{ secrets.MYSQL_PASSWORD }}" >> .env
-        echo "devDB=${{ secrets.MYSQL_DATABASE }}" >> .env
-        echo "devHost=127.0.0.1" >> .env
+      - name: Display environment variables
+        run: |
+          echo "MYSQL_USER = $MYSQL_USER" >> .env
+          echo "MYSQL_PASSWORD = $MYSQL_PASSWORD" >> .env
+          echo "MYSQL_DATABASE = $MYSQL_DATABASE" >> .env
+          echo "PORT = $PORT" >> .env
+          cat .env
 
-    - name: Wait for MySQL to be ready
-      run: |
-        # Wait until MySQL is accepting connections
-        until mysqladmin ping -h "127.0.0.1" --silent; do
-          echo "Waiting for database connection..."
-          sleep 5
-        done
+      - name: Configure MySQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-server
+          sudo systemctl start mysql
+          sudo systemctl status mysql
+          mysql -u $MYSQL_USER -p"$MYSQL_PASSWORD" -e "CREATE DATABASE $MYSQL_DATABASE;"
 
-    - name: Run tests with Mocha
-      run: npx mocha test/user.test.js
-      env:
-        DATABASE_URL: mysql://root:${{ secrets.MYSQL_PASSWORD }}@127.0.0.1:3306/${{ secrets.MYSQL_DATABASE }}
+      - name: Run Tests
+        run: |
+          npx mocha test/user.test.js
