@@ -9,7 +9,7 @@ jobs:
   build:
     name: Continuous Integration Test
     runs-on: ubuntu-latest
-    environment: dev
+   
  
     services:
       mysql:
