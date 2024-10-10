@@ -28,7 +28,7 @@ jobs:
 
         echo DEVPASSWORD = "root" >> .env
 
-        echo DEVDB = "datbase_development" >> .env
+        echo DEVDB = "database_development" >> .env
 
         echo PORT= "${{secrets.PORT}}" >> .env
         echo DEVHOST="${{secrets.DEVHOST}}" >> .env
