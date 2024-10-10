@@ -5,10 +5,10 @@ dotenv.config();
 
 const config = {
     development: {
-        username: process.env.devUsername,
-        password: process.env.devPassword,
-        database: process.env.devDB,
-        host: process.env.devHost,
+        username: process.env.DEVUSERNAME,
+        password: process.env.DEVPASSWORD,
+        database: process.env.DEVDB,
+        host: process.env.DEVHOST,
         dialect: 'mysql' 
     }
 };
