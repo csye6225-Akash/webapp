@@ -3,59 +3,61 @@ name: Continuous Integration Test Workflow
 on:
   pull_request:
     branches:
-      - main
+        - main
  
 jobs:
   build:
     name: CI
     runs-on: ubuntu-latest
-    env:
-      DEVUSERNAME: ${{ secrets.DEVUSERNAME }}
-      DEVPASSWORD: ${{ secrets.DEVPASSWORD }}
-      DEVDB: ${{ secrets.DEVDB }}
-      DEVHOST: ${{ secrets.DEVHOST }}
-    
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: 14
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: npm install
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+    - name: Install dependencies
+      run: npm install
 
-      - name: Display .env file
-        run: |
-          echo "DEVUSERNAME = $DEVUSERNAME" >> .env
-          echo "DEVPASSWORD = $DEVPASSWORD" >> .env
-          echo "DEVDB = $DEVDB" >> .env
-          echo "PORT = $PORT" >> .env
-          echo "DEVHOST = $DEVHOST" >> .env
-          cat .env
+    - name: Display .env file
+      run: |
 
-      - name: Install and Configure MySQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-server
+        echo "DEVUSERNAME = ${{secrets.DEVUSERNAME}}" >> .env
 
-          # Start MySQL service
-          sudo systemctl start mysql
+        echo "DEVPASSWORD = ${{secrets.DEVPASSWORD}}" >> .env
 
-          # Check the status of MySQL service
-          sudo systemctl status mysql
+        echo "DEVDB = ${{secrets.DEVDB}}" >> .env
 
-          # Set up root user with password and create a new user and database
-          echo "Setting up MySQL root user and creating database"
-          sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '$MYSQL_ROOT_PASSWORD';"
-          sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS $DEVDB;"
-          sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS '$DEVUSERNAME'@'localhost' IDENTIFIED BY '$DEVPASSWORD';"
-          sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO '$DEVUSERNAME'@'localhost';"
-          sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;"
+        echo "PORT=${{secrets.PORT}}" >> .env
+        echo "DEVHOST=${{secrets.DEVHOST}}" >> .env
 
-      - name: Run Tests
-        run: |
-          npx mocha test/user.test.js
+        cat .env
+
+       
+
+    - name: configuremysql
+
+      run: |
+
+        sudo apt-get update
+
+        sudo apt-get install -y curl
+
+        sudo systemctl start mysql
+
+        sudo systemctl status mysql
+        
+
+        mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
+
+ 
+
+ 
+
+ 
+
+    - name: Run Tests
+      run : |
+        npx mocha test/workflow.test.js
