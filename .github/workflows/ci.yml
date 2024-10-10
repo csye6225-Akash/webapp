@@ -1,65 +1,120 @@
-name: Continuous Integration Test Workflow
+# name: Continuous Integration Test Workflow
  
+# on:
+#   pull_request:
+#     branches:
+#         - main
+ 
+# jobs:
+#   build:
+#     name: CI
+#     runs-on: ubuntu-latest
+#     steps:
+
+#     - name: Checkout code
+#       uses: actions/checkout@v2
+
+#     - name: Setup Node.js
+#       uses: actions/setup-node@v2
+#       with:
+#         node-version: 14
+#     - name: Install dependencies
+#       run: npm install
+
+#     - name: Display .env file
+#       run: |
+#         touch .env
+#         echo DEVUSERNAME = "${{secrets.DEVUSERNAME}}" >> .env
+
+#         echo DEVPASSWORD = "root" >> .env
+
+#         echo DEVDB = "database_development" >> .env
+
+#         echo PORT= "${{secrets.PORT}}" >> .env
+#         echo DEVHOST="${{secrets.DEVHOST}}" >> .env
+
+#         cat .env
+
+       
+
+#     - name: configuremysql
+
+#       run: |
+
+#         sudo apt-get update
+
+#         sudo apt-get install -y curl
+
+#         sudo systemctl start mysql
+
+#         sudo systemctl status mysql
+        
+
+#         mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
+
+#         mysql -u root -p"root" -e "USE database_development;"
+
+ 
+
+ 
+
+ 
+
+#     - name: Run Tests
+#       run : |
+#        npx mocha --exit --timeout 10000 test/workflow.test.js
+
+
+name: Continuous Integration Test Workflow
+
 on:
   pull_request:
     branches:
-        - main
- 
+      - main
+
 jobs:
   build:
     name: CI
     runs-on: ubuntu-latest
+    env:  # Set the environment variables here
+      DEVUSERNAME: ${{ secrets.DEVUSERNAME }}
+      DEVPASSWORD: ${{ secrets.DEVPASSWORD }}
+      DEVDB: database_development
+      DEVHOST: localhost
+      PORT: 8080
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 14
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Display .env file
-      run: |
-        touch .env
-        echo DEVUSERNAME = "${{secrets.DEVUSERNAME}}" >> .env
+      - name: Display .env file
+        run: |
+          touch .env
+          echo DEVUSERNAME=${{ env.DEVUSERNAME }} >> .env
+          echo DEVPASSWORD=${{ env.DEVPASSWORD }} >> .env
+          echo DEVDB=${{ env.DEVDB }} >> .env
+          echo PORT=${{ env.PORT }} >> .env
+          echo DEVHOST=${{ env.DEVHOST }} >> .env
+          cat .env
 
-        echo DEVPASSWORD = "root" >> .env
+      - name: Configure MySQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-server
+          sudo systemctl start mysql
+          sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${DEVDB};"
+          sudo mysql -e "CREATE USER IF NOT EXISTS '${DEVUSERNAME}'@'localhost' IDENTIFIED BY '${DEVPASSWORD}';"
+          sudo mysql -e "GRANT ALL PRIVILEGES ON ${DEVDB}.* TO '${DEVUSERNAME}'@'localhost';"
+          sudo mysql -e "FLUSH PRIVILEGES;"
 
-        echo DEVDB = "database_development" >> .env
-
-        echo PORT= "${{secrets.PORT}}" >> .env
-        echo DEVHOST="${{secrets.DEVHOST}}" >> .env
-
-        cat .env
-
-       
-
-    - name: configuremysql
-
-      run: |
-
-        sudo apt-get update
-
-        sudo apt-get install -y curl
-
-        sudo systemctl start mysql
-
-        sudo systemctl status mysql
-        
-
-        mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
-
-        mysql -u root -p"root" -e "USE database_development;"
-
- 
-
- 
-
- 
-
-    - name: Run Tests
-      run : |
-       npx mocha --exit --timeout 10000 test/workflow.test.js
+      - name: Run Tests
+        run: |
+          npx mocha --exit --timeout 10000 test/workflow.test.js
