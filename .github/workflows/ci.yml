@@ -52,7 +52,7 @@ jobs:
 
         mysql -u root -p"root" -e "CREATE DATABASE  database_development;"
 
-        mysql -u root -p"root" -e "USE DATABASE  database_development;"
+        mysql -u root -p"root" -e "USE database_development;"
 
  
 
