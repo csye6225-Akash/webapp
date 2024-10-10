@@ -33,7 +33,7 @@ jobs:
           echo "devUsername = $MYSQL_USER" >> .env
           echo "devPassword = $MYSQL_PASSWORD" >> .env
           echo "devDB = $MYSQL_DATABASE" >> .env
-          echo "devHost: ${{ secrets.MYSQL_HOST }}" >>.env"
+          echo "devHost: $MYSQL_HOST" >>.env
           cat .env
 
       - name: Configure MySQL
