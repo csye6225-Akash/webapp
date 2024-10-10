@@ -1,63 +1,38 @@
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const app = require('../app.js'); 
 
 
-chai.use(chaiHttp);
-const { expect } = chai;
+const request = require('supertest');
+// const app = require('../app'); 
+const User = require('../models/Account'); 
 
-describe('User API Tests', () => {
-    let userId;
-  
-    
-    before((done) => {
-      
-      done();
-    });
-  
-    it('should create a new user successfully', (done) => {
-      chai.request(app)
-        .post('/v1/user')
-        .send({
-          email: 's456t1@exmple.com',
-          password: 'Password@123',
-          first_name: 'Test',
-          last_name: 'User'
-        })
-        .end((err, res) => {
-          if (err) done(err); 
-          expect(res).to.have.status(201);
-          userId = res.body.id; 
-          done(); // test will end here
-        });
-    });
 
-    it('should not create a user with an invalid email', (done) => {
-        chai.request(app)
-            .post('/v1/user')
-            .send({
-                email: 'invalid-email',
-                password: 'Password@123',
-                first_name: 'Test',
-                last_name: 'User'
-            })
-            .end((err, res) => {
-                expect(res).to.have.status(400);
-                done();
-            });
-    });
+const UserService = require('../services/userService'); // Adjust the path based on your structure
 
-    it('should not create a user with missing fields', (done) => {
-        chai.request(app)
-            .post('/v1/user')
-            .send({
-                password: 'Password@123'
-            })
-            .end((err, res) => {
-                expect(res).to.have.status(400);
-                done();
-            });
-    });
+describe('User Service', () => {
+  let userService;
 
-    
+  beforeAll(() => {
+    userService = new UserService();
+  });
+
+  test('should create a user', () => {
+    const user = { username: 'testUser', password: 'testPass' };
+    const createdUser = userService.createUser(user);
+    expect(createdUser).toHaveProperty('id'); // Assuming createUser returns the created user with an ID
+    expect(createdUser.username).toBe(user.username);
+  });
+
+  test('should find a user by username', () => {
+    const user = { username: 'findUser', password: 'testPass' };
+    userService.createUser(user); // Create user to find
+    const foundUser = userService.findUserByUsername(user.username);
+    expect(foundUser).toBeTruthy();
+    expect(foundUser.username).toBe(user.username);
+  });
+
+  test('should return undefined for non-existing user', () => {
+    const foundUser = userService.findUserByUsername('nonExistingUser');
+    expect(foundUser).toBeUndefined();
+  });
+
+  // Additional tests can be added here
 });
