@@ -15,10 +15,10 @@ jobs:
       mysql:
         image: mysql:latest
         env:
-          MYSQL_ROOT_PASSWORD: ${{secrets.devPassword}}
-          MYSQL_DATABASE: ${{secrets.devDB}}
-          MYSQL_USER: ${{secrets.devUsername}}
-          MYSQL_PASSWORD: ${{secrets.devPassword}}
+          MYSQL_ROOT_PASSWORD: ${{secrets.DEVPASSWORD}}
+          MYSQL_DATABASE: ${{secrets.DEVDB}}
+          MYSQL_USER: ${{secrets.DEVUSERNAME}}
+          MYSQL_PASSWORD: ${{secrets.DEVPASSWORD}}
         ports:
           - 3306:3306
         options: >-
@@ -42,10 +42,10 @@ jobs:
  
       - name: Configure Environment Variables
         run: |
-          echo DB_USER=${{ secrets.devUsername }}
-          echo DB_PASSWORD=${{ secrets.devPassword }}
-          echo DB_NAME=${{ secrets.devDB }}
-          echo DB_HOST=${{ secrets.devHost }}
+          echo DB_USER=${{ secrets.DEVUSERNAME }}
+          echo DB_PASSWORD=${{ secrets.DEVPASSWORD }}
+          echo DB_NAME=${{ secrets.DEVDB }}
+          echo DB_HOST=${{ secrets.DEVHOST }}
           echo PORT=${{ secrets.PORT }}
  
       - name: Wait for MySQL
@@ -59,8 +59,8 @@ jobs:
         run: npm test -- --forceExit
         env:
           PORT: ${{secrets.PORT}}
-          DB_NAME: ${{secrets.devDB}}
-          DB_PASSWORD: ${{secrets.devPassword}}
-          DB_USER: ${{secrets.devUsername}}
-          DB_HOST: ${{secrets.devHost}}
+          DB_NAME: ${{secrets.DEVDB}}
+          DB_PASSWORD: ${{secrets.DEVPASSWORD}}
+          DB_USER: ${{secrets.DEVUSERNAME}}
+          DB_HOST: ${{secrets.DEVHOST}}
  
