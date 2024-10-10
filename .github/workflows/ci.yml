@@ -56,4 +56,4 @@ jobs:
     - name: Run Tests
       run: |
         # Run your tests using Mocha
-        npx mocha --exit --timeout 10000 test/user.test.js
+        npm test
