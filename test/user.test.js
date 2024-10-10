@@ -5,7 +5,7 @@ const request = require('supertest');
 const User = require('../models/Account'); 
 
 
-const UserService = require('../services/userService'); // Adjust the path based on your structure
+const UserService = require('../services/userservice'); // Adjust the path based on your structure
 
 describe('User Service', () => {
   let userService;
