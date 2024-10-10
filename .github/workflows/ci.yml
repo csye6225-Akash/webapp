@@ -1,56 +1,66 @@
-name: integration-test
-
+name: Continuous Integration Test Workflow
+ 
 on:
   pull_request:
     branches:
-      - main
-
+        - main
+ 
 jobs:
   build:
-    name: CI
+    name: Continuous Integration Test
     runs-on: ubuntu-latest
-    env:
-      MYSQL_USER: ${{ secrets.devUsername }}
-      MYSQL_PASSWORD: ${{ secrets.devPassword }}
-      MYSQL_ROOT_PASSWORD: ${{ secrets.devPassword }}
-      MYSQL_DATABASE: ${{ secrets.devDB }}
-    ports:
-     - 3306:3306
-    options: >-
+    environment: dev
+ 
+    services:
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ROOT_PASSWORD: ${{secrets.devUsername}}
+          MYSQL_DATABASE: ${{secrets.devDB}}
+          MYSQL_USER: ${{secrets.devUsername}}
+          MYSQL_PASSWORD: ${{secrets.devPassword}}
+        ports:
+          - 3306:3306
+        options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-      
+ 
     steps:
-      - name: Checkout code
+      - name: Checkout to our code
         uses: actions/checkout@v3
-
+ 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "20.x"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Display environment variables
+ 
+      - name: Install Dependencies
+        run: npm i
+       
+ 
+      - name: Configure Environment Variables
         run: |
-          echo devUsername=${{ secrets.devUsername }}
-          echo devPassword=${{ secrets.devPassword }}
-          echo devDB=${{ secrets.devDB }}
-          echo devHost=${{ secrets.devHost }}
+          echo DB_USER=${{ secrets.devUsername }}
+          echo DB_PASSWORD=${{ secrets.devPassword }}
+          echo DB_NAME=${{ secrets.devDB }}
+          echo DB_HOST=${{ secrets.devHost }}
           echo PORT=${{ secrets.PORT }}
-
-      - name: Configure MySQL
+ 
+      - name: Wait for MySQL
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-server
-          sudo systemctl start mysql
-          sudo systemctl status mysql
-          mysql -u $MYSQL_USER -p"$MYSQL_PASSWORD" -e "CREATE DATABASE $MYSQL_DATABASE;"
-          
-
-      - name: Run Tests
-        run: |
-          npx mocha test/user.test.js
+          until mysqladmin ping -h "127.0.0.1" --silent; do
+            echo "Waiting for MySQL to be ready..."
+            sleep 5
+          done
+ 
+      - name: Run Test
+        run: npm test -- --forceExit
+        env:
+          PORT: ${{secrets.PORT}}
+          DB_NAME: ${{secrets.devDB}}
+          DB_PASSWORD: ${{secrets.devPassword}}
+          DB_USER: ${{secrets.devUsername}}
+          DB_HOST: ${{secrets.devHost}}
+ 
