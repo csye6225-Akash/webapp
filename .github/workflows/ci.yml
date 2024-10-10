@@ -24,11 +24,11 @@ jobs:
     - name: Display .env file
       run: |
         touch .env
-        echo DEVUSERNAME = "root" >> .env
+        echo DEVUSERNAME = "${{secrets.DEVUSERNAME}}" >> .env
 
-        echo DEVPASSWORD = "root" >> .env
+        echo DEVPASSWORD = "${{secrets.DEVPASSWORD}}" >> .env
 
-        echo DEVDB = "database_development" >> .env
+        echo DEVDB = "${{secrets.DEVDB}}" >> .env
 
         echo PORT= "${{secrets.PORT}}" >> .env
         echo DEVHOST="${{secrets.DEVHOST}}" >> .env
