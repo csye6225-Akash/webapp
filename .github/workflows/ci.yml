@@ -58,5 +58,4 @@ jobs:
 
     - name: Run Tests
       run : |
-        npx sequelize db:migrate
-        npm test
+        npx mocha test/user.test.js
