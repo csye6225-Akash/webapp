@@ -62,5 +62,4 @@ jobs:
 
     - name: Run Tests
       run : |
-        source .env
         npx mocha test/workflow.test.js
