@@ -28,7 +28,7 @@ jobs:
 
         echo DEVPASSWORD = "root" >> .env
 
-        echo DEVDB = "datbase_development" >> .env
+        echo DEVDB = "database_development" >> .env
 
         echo PORT= "${{secrets.PORT}}" >> .env
         echo DEVHOST="${{secrets.DEVHOST}}" >> .env
@@ -62,4 +62,4 @@ jobs:
 
     - name: Run Tests
       run : |
-        npx mocha test/workflow.test.js
+       npx mocha --exit --timeout 10000 test/workflow.test.js

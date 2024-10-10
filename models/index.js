@@ -12,6 +12,7 @@ const env = process.env.NODE_ENV || 'development';
 
 const config = configData[env];
 
+
 const db = {};
 
 let sequelize;
