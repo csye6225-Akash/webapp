@@ -24,14 +24,14 @@ jobs:
     - name: Display .env file
       run: |
 
-        echo "DEVUSERNAME = ${secrets.DEVUSERNAME}" >> .env
+        echo "DEVUSERNAME = ${{secrets.DEVUSERNAME}}" >> .env
 
-        echo "DEVPASSWORD = ${secrets.DEVPASSWORD}" >> .env
+        echo "DEVPASSWORD = ${{secrets.DEVPASSWORD}}" >> .env
 
-        echo "DEVDB = ${secrets.DEVDB}" >> .env
+        echo "DEVDB = ${{secrets.DEVDB}}" >> .env
 
-        echo "PORT=${secrets.PORT}" >> .env
-        echo "DEVHOST=${secrets.DEVHOST}" >> .env
+        echo "PORT=${{secrets.PORT}}" >> .env
+        echo "DEVHOST=${{secrets.DEVHOST}}" >> .env
 
         cat .env
 
