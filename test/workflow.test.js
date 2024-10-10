@@ -47,5 +47,5 @@ describe('POST /v1/user', function() {
         expect(res).to.have.status(400);
         done();
       });
-  });
+  }).timeout(2000)
 });
