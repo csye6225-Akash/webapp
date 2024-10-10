@@ -44,7 +44,7 @@ jobs:
         echo "devUsername=root" >> .env
         echo "devPassword=${{ secrets.MYSQL_PASSWORD }}" >> .env
         echo "devDB=${{ secrets.MYSQL_DATABASE }}" >> .env
-        echo "host=127.0.0.1" >> .env
+        echo "devHost=127.0.0.1" >> .env
 
     - name: Wait for MySQL to be ready
       run: |
