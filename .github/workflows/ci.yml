@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main  
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  
+
+    services:
+      mysql:
+        image: mysql:5.7  
+        ports:
+          - 3306:3306  # Expose port 3306 for MySQL
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }} 
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }} 
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}  
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}  
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -u root --silent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2  
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  
+
+    - name: Install dependencies
+      run: npm install  
+
+    - name: Set up database environment variables
+      env:
+        MYSQL_USER: ${{ secrets.MYSQL_USER }}
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+        MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+      run: |
+        echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> $GITHUB_ENV
+        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> $GITHUB_ENV
+        echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> $GITHUB_ENV
+        echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> $GITHUB_ENV
+        echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> $GITHUB_ENV
+
+    - name: Wait for MySQL to be ready
+      run: |
+        # Wait until MySQL is accepting connections
+        until mysqladmin ping -h "127.0.0.1" --silent; do
+          echo "Waiting for database connection..."
+          sleep 5
+        done
+
+    - name: Run tests with Mocha
+      run: npx mocha test/user.test.js
+      env:
+        DATABASE_URL: mysql://${{ secrets.MYSQL_USER }}:${{ secrets.MYSQL_PASSWORD }}@127.0.0.1:3306/${{ secrets.MYSQL_DATABASE }}  # Adjust database URL if necessary
