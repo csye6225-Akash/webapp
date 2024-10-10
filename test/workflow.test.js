@@ -1,37 +1,38 @@
-const chai = require('chai'); // Import chai
-const chaiHttp = require('chai-http'); // Import chai-http
-const app = require('../app'); // Import your Express application
+const chai = require('chai');
+const chaiHttp = require('chai-http');
+const app = require('../app');
 
-const expect = chai.expect; // Use chai's expect assertion
-chai.use(chaiHttp); // Use chai-http for HTTP requests
+const expect = chai.expect;
+chai.use(chaiHttp);
 
-// Health check endpoint test
 describe('/healthz endpoint', function() {
   it('should return a 200 status for /healthz', function(done) {
-    chai.request(app)
-      .get('/healthz')
-      .end(function(err, res) {
-        if (err) return done(err);
-        expect(res).to.have.status(200);
-        done();
-      });
-  });
+    try {
+      chai.request(app)
+        .get('/healthz')
+        .end(function(err, res) {
+          if (err) return done(err);
+          expect(res).to.have.status(200);
+          done();
+        });
+    } catch (error) {
+      done(error);
+    }
+  }).timeout(2000);
 });
 
-// User creation tests
 describe('POST /v1/user', function() {
-
   it('should not create a user with an invalid email', function(done) {
     chai.request(app)
       .post('/v1/user')
       .send({
-        email: 'invalid-email', // Invalid email format
+        email: 'invalid-email',
         password: 'Password@123',
         first_name: 'Test',
         last_name: 'User'
       })
       .end(function(err, res) {
-        expect(res).to.have.status(400); // Expect status 400 for invalid input
+        expect(res).to.have.status(400);
         done();
       });
   });
@@ -40,15 +41,11 @@ describe('POST /v1/user', function() {
     chai.request(app)
       .post('/v1/user')
       .send({
-        password: 'Password@123' // Missing other fields like email, first_name, and last_name
+        password: 'Password@123'
       })
       .end(function(err, res) {
-        expect(res).to.have.status(400); // Expect status 400 for missing fields
+        expect(res).to.have.status(400);
         done();
       });
   });
-
-  
-
-
 });
