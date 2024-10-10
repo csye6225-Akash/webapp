@@ -24,7 +24,7 @@ jobs:
     - name: Display .env file
       run: |
         touch .env
-        echo DEVUSERNAME = "${DEVUSERNAME}" >> .env
+        echo DEVUSERNAME = "${{secrets.DEVUSERNAME}}" >> .env
 
         echo DEVPASSWORD = "root" >> .env
 
