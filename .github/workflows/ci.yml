@@ -24,11 +24,11 @@ jobs:
     - name: Display .env file
       run: |
         touch .env
-        echo DEVUSERNAME = "${{secrets.DEVUSERNAME}}" >> .env
+        echo DEVUSERNAME = "root" >> .env
 
-        echo DEVPASSWORD = "${{secrets.DEVPASSWORD}}" >> .env
+        echo DEVPASSWORD = "root" >> .env
 
-        echo DEVDB = "${{secrets.DEVDB}}" >> .env
+        echo DEVDB = "datbase_development" >> .env
 
         echo PORT= "${{secrets.PORT}}" >> .env
         echo DEVHOST="${{secrets.DEVHOST}}" >> .env
@@ -62,5 +62,4 @@ jobs:
 
     - name: Run Tests
       run : |
-        source .env
         npx mocha test/workflow.test.js
