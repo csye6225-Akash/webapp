@@ -29,29 +29,7 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Display .env file
-      run: |
-        touch .env
-        echo DEVUSERNAME="${{ env.DEVUSERNAME }}" >> .env
-        echo DEVPASSWORD="${{ env.DEVPASSWORD }}" >> .env
-        echo DEVDB="${{ env.DEVDB }}" >> .env
-        echo PORT="${{ secrets.PORT }}" >> .env
-        echo DEVHOST="${{ env.DEVHOST }}" >> .env
-        cat .env
-
-    - name: Start and configure MySQL
-      run: |
-      
-        sudo systemctl start mysql
-
-        
-        sudo systemctl status mysql
-
-        
-        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "CREATE DATABASE IF NOT EXISTS \`${{ env.DEVDB }}\`;"
-        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "CREATE USER IF NOT EXISTS '${{ env.DEVUSERNAME }}'@'localhost' IDENTIFIED BY '${{ env.DEVPASSWORD }}';"
-        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "GRANT ALL PRIVILEGES ON \`${{ env.DEVDB }}\`.* TO '${{ env.DEVUSERNAME }}'@'localhost';"
-        sudo mysql --user=root --password="${{ env.MYSQL_ROOT_PASSWORD }}" -e "FLUSH PRIVILEGES;"
+    
 
     - name: Run Tests
       run: |
