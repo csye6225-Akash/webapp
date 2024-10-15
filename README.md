@@ -1,5 +1,7 @@
 Checks for assignement 1 :
 
+
+
 200 OK - when we Send a GET response with no body/payload.
 503: When the Database is not working.
 400: When sending a GET response with payload.
