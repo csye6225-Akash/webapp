@@ -7,25 +7,25 @@ packer {
   }
 }
 
-variable "aws-region" {
+variable "aws_region" {
   type = string
 }
 
-variable "source-ami" {
+variable "source_ami" {
   type = string
 }
 
-variable "ssh-username" {
+variable "ssh_username" {
   type    = string
   default = "admin"
 }
 
-variable "subnet-id" {
+variable "subnet_id" {
   type = string
 }
 
 source "amazon-ebs" "csye6225-ami" {
-  region          = "${var.aws_region}"
+  aws_region          = "${var.aws_region}"
   ami_name        = "csye6225-ami-1"
   ami_description = "CSYE6225 Assignment-04"
   # profile         = "${var.aws-profile}"
