@@ -36,14 +36,14 @@ source "amazon-ebs" "csye6225-ami" {
   }
 
   ami_users = [
-    "886436923776","361769559850"
+    "886436923776", "361769559850"
   ]
 
   instance_type = "t2.micro"
   source_ami    = "${var.source_ami}"
   ssh_username  = "${var.ssh_username}"
   subnet_id     = "${var.subnet_id}"
-  
+
 
   launch_block_device_mappings {
     delete_on_termination = true
@@ -58,10 +58,10 @@ build {
     "source.amazon-ebs.csye6225-ami"
   ]
 
- provisioner "file" {
+  provisioner "file" {
     source      = "webapp.zip"
     destination = "~/"
- }
+  }
 
   provisioner "shell" {
     script = "setup.sh"
