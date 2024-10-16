@@ -25,7 +25,7 @@ variable "subnet_id" {
 }
 
 source "amazon-ebs" "csye6225-ami" {
-  aws_region          = "${var.aws_region}"
+  aws_region      = "${var.aws_region}"
   ami_name        = "csye6225-ami-1"
   ami_description = "CSYE6225 Assignment-04"
   # profile         = "${var.aws-profile}"
