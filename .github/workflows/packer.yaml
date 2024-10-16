@@ -1,0 +1,46 @@
+name: Packer Validity
+on: [pull_request]
+
+jobs:
+  Run-Packer-Validity-Check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Artifact Setup
+        run: zip -r webapp.zip .
+
+      - name: Install Packer
+        run: |
+          packer init aws.pkr.hcl
+
+      - name: Packer Validation Check
+        id: fmt
+        run: |
+          set -e
+          if ! packer fmt -check aws.pkr.hcl; then
+            echo "Template is not formatted correctly. Please run 'packer fmt' locally and push the changes."
+            exit 1
+          fi
+
+      - name: Packer Validation
+        run: |
+          packer validate aws.pkr.hcl
+        env:
+          AMI_USER_DEMO: ${{secrets.AMI_USER_DEMO}} 
+          PKR_VAR_aws-region: "${{ secrets.AWS_REGION }}"
+          PKR_VAR_source-ami: "${{ secrets.SOURCE_AMI }} "
+          PKR_VAR_subnet-id: "${{ secrets.SUBNET_ID }}"
+
+
+          
+
+
+
+
+
+
+
+      
+  
