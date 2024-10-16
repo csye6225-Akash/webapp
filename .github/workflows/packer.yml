@@ -29,9 +29,9 @@ jobs:
           packer validate aws.pkr.hcl
         env:
           AMI_USER_DEMO: ${{secrets.AMI_USER_DEMO}} 
-          PKR_VAR_aws-region: "${{ secrets.AWS_REGION }}"
-          PKR_VAR_source-ami: "${{ secrets.SOURCE_AMI }} "
-          PKR_VAR_subnet-id: "${{ secrets.SUBNET_ID }}"
+          PKR_VAR_aws_region: "${{ secrets.AWS_REGION }}"
+          PKR_VAR_source_ami: "${{ secrets.SOURCE_AMI }} "
+          PKR_VAR_subnet_id: "${{ secrets.SUBNET_ID }}"
 
 
           
