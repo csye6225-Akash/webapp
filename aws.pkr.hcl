@@ -64,7 +64,7 @@ build {
     destination = "~/"
   }
 
-   provisioner "shell" {
+  provisioner "shell" {
     script = "setup.sh"
   }
 }
