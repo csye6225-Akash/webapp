@@ -8,13 +8,13 @@ packer {
 }
 
 variable "aws_region" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "source_ami" {
-  type = string
-  default=""
+  type    = string
+  default = ""
 }
 
 variable "ssh_username" {
@@ -23,8 +23,8 @@ variable "ssh_username" {
 }
 
 variable "subnet_id" {
-  type = string
-  default=""
+  type    = string
+  default = ""
 }
 
 source "amazon-ebs" "csye6225-ami" {
