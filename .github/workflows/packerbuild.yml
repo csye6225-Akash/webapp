@@ -1,0 +1,37 @@
+name: Build AMI Packer
+
+on: [pull_request]
+
+jobs:
+  ami-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+       - name: Setup Environment Variables
+         run: |
+          touch .env
+           echo "MYSQL_DATABASE=${{vars.MYSQL_DATABASE}}" >> .env
+           echo "MYSQL_PASSWORD=${{vars.MYSQL_PASSWORD}}" >> .env
+           echo "MYSQL_USER=root" >> .env
+
+      - name: Create Zip Archive
+        run: |
+          zip -r webapp.zip .
+
+      - name: Build AMI
+        run: |
+          packer init aws.pkr.hcl
+          packer fmt aws.pkr.hcl
+          packer validate aws.pkr.hcl
+          packer build aws.pkr.hcl
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AMI_USER_DEMO: ${{secrets.AMI_USER_DEMO}} 
+          PKR_VAR_aws_region: "${{ secrets.AWS_REGION }}"
+          PKR_VAR_source_ami: "${{ secrets.SOURCE_AMI }}"
+          PKR_VAR_subnet_id: "${{ secrets.SUBNET_ID }}"
+          PKR_VAR_ssh_username: "${{ secrets.SSH_USERNAME }}"
