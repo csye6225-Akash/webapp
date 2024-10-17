@@ -18,7 +18,11 @@ sudo systemctl start mysql
 sudo systemctl enable mysql
 
 # Alter the MySQL root user password and create a database
-sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES; CREATE DATABASE database_development;"
+#sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES; CREATE DATABASE database_development;"
+
+sudo mysql -u root -e "CREATE USER 'akash'@'localhost' IDENTIFIED BY 'akash';"
+sudo mysql -u root -e "GRANT ALL PRIVILEGES ON database_development.* TO 'akash'@'localhost';"
+sudo mysql -u root -e "FLUSH PRIVILEGES;"
 
 # Unzip the webapp.zip file
 unzip ~/webapp.zip -d /home/ubuntu/webapp  # Adjust the path to the location of your webapp.zip
