@@ -20,7 +20,7 @@ jobs:
       - name: Create Directory (if needed)
         run: mkdir -p webapp 
 
-      - ⁠name: Zip file
+      - name:
         uses: montudor/action-zip@v1
         with:
           args: zip -r webapp.zip webapp/
