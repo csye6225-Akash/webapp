@@ -20,9 +20,10 @@ jobs:
       - name: Create Directory (if needed)
         run: mkdir -p webapp 
 
-      - name: Create Zip Archive
-        run: |
-          zip -r webapp.zip webapp/
+      - ⁠name: Zip file
+        uses: montudor/action-zip@v1
+        with:
+          args: zip -r webapp.zip webapp/
 
       - name: Build AMI
         run: |
