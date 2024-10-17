@@ -1,6 +1,6 @@
 name: Build AMI Packer
 
-on: [pull_request]
+on: push
 
 jobs:
   ami-build:

@@ -52,11 +52,11 @@ checkConnection();
 // If you want to use sync only when necessary, you can conditionally include it:
 
 // Only sync in development mode or using a specific environment variable
-if (process.env.NODE_ENV === 'development' || process.env.SYNC_DB_SCHEMA === 'true') {
-  sequelize.sync()
+
+  sequelize.sync({ alter: true })
     .then(() => console.log('Database schema synced successfully.'))
     .catch((error) => console.error('Error syncing database schema:', error));
-}
+
 
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-cache');
