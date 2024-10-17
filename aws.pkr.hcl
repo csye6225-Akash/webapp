@@ -26,7 +26,7 @@ variable "subnet_id" {
 
 source "amazon-ebs" "csye6225-ami" {
   region          = "us-east-2"
-  ami_name        = "csye6225-ami1-1"
+  ami_name        = "csye6225-ami2-1"
   ami_description = "CSYE6225 Assignment-04"
   ssh_username    = "ubuntu"
   # profile         = "${var.aws-profile}"
