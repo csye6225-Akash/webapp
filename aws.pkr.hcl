@@ -13,8 +13,7 @@ variable "aws_region" {
 }
 
 variable "source_ami" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "ssh_username" {
