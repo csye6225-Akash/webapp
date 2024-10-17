@@ -12,7 +12,7 @@ jobs:
 
       - name: Setup Environment Variables
         run: |
-        touch .env
+          touch .env
           echo "MYSQL_DATABASE=${{vars.MYSQL_DATABASE}}" >> .env
           echo "MYSQL_PASSWORD=${{vars.MYSQL_PASSWORD}}" >> .env
           echo "MYSQL_USER=root" >> .env
