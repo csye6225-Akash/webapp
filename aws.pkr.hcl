@@ -42,7 +42,7 @@ source "amazon-ebs" "csye6225-ami" {
 
   instance_type = "t2.micro"
   source_ami    = "${var.source_ami}"
-  ssh_username  = "${var.ssh_username}"
+ # ssh_username  = "${var.ssh_username}"
   subnet_id     = "${var.subnet_id}"
   
 
