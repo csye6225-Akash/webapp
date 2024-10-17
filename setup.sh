@@ -20,8 +20,11 @@ sudo systemctl enable mysql
 # Alter the MySQL root user password and create a database
 sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES; CREATE DATABASE database_development;"
 
-cd ~/
+# Unzip the webapp.zip file
+unzip ~/webapp.zip -d /home/ubuntu/webapp  # Adjust the path to the location of your webapp.zip
 
+# Navigate to the application folder
+cd /home/ubuntu/webapp  # Change this to the actual location of your unzipped webapp
+
+# Install the npm dependencies
 npm install
-
-
