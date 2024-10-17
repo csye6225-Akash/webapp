@@ -13,9 +13,10 @@ jobs:
       - name: Setup Environment Variables
         run: |
           touch .env
-          echo "MYSQL_DATABASE=${{vars.MYSQL_DATABASE}}" >> .env
-          echo "MYSQL_PASSWORD=${{vars.MYSQL_PASSWORD}}" >> .env
-          echo "MYSQL_USER=root" >> .env
+          echo "DEVDB=${{vars.DEVDB}}" >> .env
+          echo "DEVPASSWORD=${{vars.DEVPASSWORD}}" >> .env
+          echo "DEVUSERNAME=${{vars.DEVUSERNAME}}" >> .env
+          echo "DEVHOST=${{vars.DEVHOST}}" >> .env
 
       # - name: Copy webapp files
       #   run: rsync -arv --exclude='.git/' --exclude='.github/' --exclude='.gitignore' . ./webapp && ls -R

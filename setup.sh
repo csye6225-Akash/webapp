@@ -18,7 +18,9 @@ sudo systemctl start mysql
 sudo systemctl enable mysql
 
 # Alter the MySQL root user password and create a database
-sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'akash'; FLUSH PRIVILEGES; CREATE DATABASE database_development;"
+sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'; FLUSH PRIVILEGES; CREATE DATABASE database_development;"
+
+cd ~/
 
 npm install
 
