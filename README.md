@@ -8,6 +8,7 @@ Checks for assignement 1 :
 
 
 
+
 Students will demo the web application from their laptops. Download the zip uploaded to Canvas and use the submitted code for demo. Local code cannot be used for demo.
 APIs can be demoed using any Postman or Restlet or some other REST client but not via the browser.
 The application should not have UI.
