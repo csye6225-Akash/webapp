@@ -14,10 +14,10 @@ sudo apt-get install -y nodejs npm
 # Install NPM
 sudo apt-get install npm -y
 
-#Install MariaDB server
+#Install MySQL server
 sudo apt-get install mysql-server -y
 
-# # Start the MariaDB service and enable it
+# # Start the MySQL service and enable it
 sudo systemctl start mysql
 sudo systemctl enable mysql
 
