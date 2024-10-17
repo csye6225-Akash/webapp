@@ -25,10 +25,10 @@ variable "subnet_id" {
 }
 
 source "amazon-ebs" "csye6225-ami" {
-  region          = "us-east-2"
+  region          = "${var.AWS_REGION}"
   ami_name        = "csye6225-ami4-1"
   ami_description = "CSYE6225 Assignment-04"
-  ssh_username    = "ubuntu"
+  ssh_username    = "${var.SSH_USERNAME}"
   # profile         = "${var.aws-profile}"
 
   aws_polling {
@@ -41,7 +41,7 @@ source "amazon-ebs" "csye6225-ami" {
   ]
 
   instance_type = "t2.micro"
-  source_ami    = "ami-0ea3c35c5c3284d82"
+  source_ami    = "${var.SOURCE_AMI}"
   # ssh_username  = "${var.ssh_username}"
   subnet_id = "${var.subnet_id}"
 
