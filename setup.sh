@@ -22,6 +22,5 @@ sudo systemctl start mysql
 sudo systemctl enable mysql
 
 
-sudo mysql_secure_installation -y
 
  sudo mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'akash';FLUSH PRIVILEGES;CREATE DATABASE database_development;"
