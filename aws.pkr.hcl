@@ -48,7 +48,7 @@ source "amazon-ebs" "csye6225-ami" {
 
   launch_block_device_mappings {
     delete_on_termination = true
-    device_name           = "/dev/xvda"
+    device_name           = "/dev/sda1"
     volume_size           = 8
     volume_type           = "gp2"
   }
@@ -60,8 +60,8 @@ build {
   ]
 
   provisioner "file" {
-    source      = "webapp.zip"
-    destination = "~/"
+    source      = "../webapp.zip"
+    destination = "/tmp/webapp.zip"
   }
 
   provisioner "shell" {
