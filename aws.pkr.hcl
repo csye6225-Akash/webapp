@@ -9,10 +9,12 @@ packer {
 
 variable "aws_region" {
   type = string
+  default = ""
 }
 
 variable "source_ami" {
   type = string
+  default=""
 }
 
 variable "ssh_username" {
@@ -22,6 +24,7 @@ variable "ssh_username" {
 
 variable "subnet_id" {
   type = string
+  default=""
 }
 
 source "amazon-ebs" "csye6225-ami" {
