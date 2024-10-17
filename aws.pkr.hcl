@@ -31,7 +31,7 @@ source "amazon-ebs" "csye6225-ami" {
   ami_name        = "csye6225-ami4-1"
   ami_description = "CSYE6225 Assignment-04"
   #ssh_username    = "ubuntu"
-  # profile         = "${var.aws-profile}"
+  profile = "${var.aws-profile}"
 
   aws_polling {
     delay_seconds = 120
@@ -39,7 +39,7 @@ source "amazon-ebs" "csye6225-ami" {
   }
 
   ami_users = [
-    "886436923776", "361769559850"
+    "361769559850"
   ]
 
   instance_type = "t2.micro"
