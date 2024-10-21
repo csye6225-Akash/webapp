@@ -9,11 +9,12 @@ packer {
 
 variable "aws_region" {
   type    = string
-  default = ""
+
+           default = ""
 }
 
 variable "source_ami" {
-  type = string
+  type =     string
 }
 
 variable "ssh_username" {
@@ -28,7 +29,7 @@ variable "subnet_id" {
 
 source "amazon-ebs" "csye6225-ami" {
   region          = "${var.aws_region}"
-  ami_name        = "csye6225-ami-${formatdate("YYYY_MM_DD_hh_mm_ss", timestamp())}"
+  # ami_name        = "csye6225-ami-${formatdate("YYYY_MM_DD_hh_mm_ss", timestamp())}"
   ami_description = "CSYE6225 Assignment-04"
   #ssh_username    = "ubuntu"
   #profile = "${var.aws-profile}"
