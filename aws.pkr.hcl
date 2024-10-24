@@ -40,7 +40,7 @@ source "amazon-ebs" "csye6225-ami" {
   }
 
   ami_users = [
-    "${var.AMI_USERS}"
+    "${var.ami_users}"
   ]
 
   instance_type = "t2.small"
