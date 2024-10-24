@@ -13,7 +13,7 @@ sudo apt-get install -y nodejs npm
 sudo mv ~/webapp.zip /opt/
 
 # Unzip the webap .zip file
-sudo unzip /opt/webapp.zip -d /opt/  # Adjust the path to the location of your webapp.zip
+sudo unzip /opt/webapp.zip -d /opt/webapp  # Adjust the path to the location of your webapp.zip
 
 # # Navigate to the application folder
 # cd opt/webapp  
