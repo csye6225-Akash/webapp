@@ -10,13 +10,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Setup Environment Variables
-        run: |
-          touch .env
-          echo "DEVDB=${{vars.DEVDB}}" >> .env
-          echo "DEVPASSWORD=${{vars.DEVPASSWORD}}" >> .env
-          echo "DEVUSERNAME=${{vars.DEVUSERNAME}}" >> .env
-          echo "DEVHOST=${{vars.DEVHOST}}" >> .env
+      # - name: Setup Environment Variables
+      #   run: |
+      #     touch .env
+      #     echo "DEVDB=${{vars.DEVDB}}" >> .env
+      #     echo "DEVPASSWORD=${{vars.DEVPASSWORD}}" >> .env
+      #     echo "DEVUSERNAME=${{vars.DEVUSERNAME}}" >> .env
+      #     echo "DEVHOST=${{vars.DEVHOST}}" >> .env
 
       # - name: Copy webapp files
       #   run: rsync -arv --exclude='.git/' --exclude='.github/' --exclude='.gitignore' . ./webapp && ls -R
