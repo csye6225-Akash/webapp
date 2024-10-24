@@ -22,6 +22,11 @@ variable "ssh_username" {
   default = ""
 }
 
+variable "ami_users" {
+  type    = string
+  default = ""
+}
+
 variable "subnet_id" {
   type    = string
   default = ""
