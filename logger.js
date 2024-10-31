@@ -13,13 +13,13 @@ const logger = winston.createLogger({
   transports: [
     // Log 'info' and above messages to a file
     new winston.transports.File({
-      filename: "csye6225.log",// /var/log/webapp.log
+      filename: "var/log/csye6225.log",// /var/log/webapp.log
       level: 'info',
     }),
  
     // Log 'error' and 'warning' messages to a separate file
     new winston.transports.File({
-      filename: "csye6225.log",
+      filename: "var/log/csye6225.log",
       level: 'error',
     }),
  
