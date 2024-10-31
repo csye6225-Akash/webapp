@@ -5,6 +5,11 @@ const multerS3 = require('multer-s3');
 // Configure multer storage
 const storage = multer.memoryStorage(); // Use memory storage or configure disk storage as needed
 const upload = multer({ storage: storage });
+const StatsD = require('node-statsd');
+const statsdClient = new StatsD({
+  host: 'localhost',
+  port: 8125,
+});
 
 const logger = require('./logger'); 
 const express = require('express');
