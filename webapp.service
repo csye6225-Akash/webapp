@@ -1,7 +1,7 @@
 [Unit]
 Description=My Web Application
-ConditionPathExists=/opt/webapp/.env
-After=network.target
+After=cloud-final.service
+ConditionPathExists=/opt/webapp 
 
 [Service]
 User=csye6225
@@ -15,4 +15,4 @@ StandardError=append:/var/log/csye6225_error.log
 
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=cloud-init.target
