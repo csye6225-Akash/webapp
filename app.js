@@ -1,6 +1,11 @@
 const { S3Client } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
+
+// Configure multer storage
+const storage = multer.memoryStorage(); // Use memory storage or configure disk storage as needed
+const upload = multer({ storage: storage });
+
 const logger = require('./logger'); 
 const express = require('express');
 const app = express();
@@ -15,54 +20,17 @@ const health_route = require('./routes/healthz-route.js');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const StatsD = require('node-statsd');
-
-// Configure the StatsD client
-const statsd = new StatsD({
-  host: 'localhost', // Change to your StatsD server address
-  port: 8125,        // Default port for StatsD
-});
-
-
-const sendMetric = (metricName, value = 1, type = 'count') => {
-  switch (type) {
-    case 'count':
-      statsd.increment(metricName, value);
-      break;
-    case 'timing':
-      statsd.timing(metricName, value);
-      break;
-    case 'gauge':
-      statsd.gauge(metricName, value);
-      break;
-    default:
-      console.error(`Unknown metric type: ${type}`);
-  }
+const sendMetric = (metricName, value, type = 'count') => {
+  // Implement your metric sending logic here
+  console.log(`Metric sent: ${metricName}, Value: ${value}, Type: ${type}`);
+  // Example: Send to CloudWatch, Prometheus, etc.
 };
 
-// Initialize the S3 client
-const s3 = new S3Client({ region: 'us-west-2' });
 
-const upload = multer({
-  storage: multerS3({
-    s3,
-    bucket: process.env.S3_BUCKET_NAME, // Ensure this is set in your environment variables
-    key: function (req, file, cb) {
-      cb(null, `uploads/${file.originalname}`);
-    }
-  })
-});
-
-module.exports = upload;
-
-
-
-
-
-// Middleware to check for query parameters
 app.use((req, res, next) => {
   if (Object.keys(req.query).length !== 0) {
     logger.warn(`Query parameters are not allowed in the request to ${req.originalUrl}`);
+    sendMetric('query_parameters_rejected', 1, 'count'); // Metric for rejected query parameters
     return res.status(400).json({ error: 'Query parameters are not allowed' });
   }
   next();
@@ -72,6 +40,7 @@ app.use((req, res, next) => {
 app.all('/v1/user', (req, res, next) => {
   if (req.method !== 'POST') {
     logger.warn(`Method ${req.method} is not allowed for ${req.originalUrl}`);
+    sendMetric('method_not_allowed', 1, 'count'); // Metric for method not allowed
     return res.status(405).json({ error: 'Method not allowed' });
   }
   next();
@@ -81,29 +50,30 @@ app.all('/v1/user', (req, res, next) => {
 app.all('/v1/user/self', (req, res, next) => {
   if (req.method !== 'GET' && req.method !== 'PUT') {
     logger.warn(`Method ${req.method} is not allowed for ${req.originalUrl}`);
+    sendMetric('method_not_allowed', 1, 'count'); // Metric for method not allowed
     return res.status(405).json({ error: 'Method not allowed' });
   }
   next();
 });
 
-
-
 let dbConnected = false;
 
 // Import the logger at the top of your file
 
-
 const checkConnection = async () => {
+  const startTime = Date.now(); // Start timing the connection check
   try {
     await sequelize.authenticate();
+    const duration = Date.now() - startTime; // Calculate duration
     logger.info('Connection has been established successfully.'); // Use logger instead of console.log
     dbConnected = true;
+    sendMetric('db_connection_success', duration, 'timing'); // Metric for successful DB connection
   } catch (error) {
     logger.error('Unable to connect to the database:', error); // Use logger instead of console.error
     dbConnected = false;
+    sendMetric('db_connection_failure', 1, 'count'); // Metric for DB connection failure
   }
 };
-
 
 // Call the function to check the database connection
 checkConnection();
@@ -112,11 +82,9 @@ checkConnection();
 // If you want to use sync only when necessary, you can conditionally include it:
 
 // Only sync in development mode or using a specific environment variable
-
-  sequelize.sync({ alter: true })
-    .then(() => console.log('Database schema synced successfully.'))
-    .catch((error) => console.error('Error syncing database schema:', error));
-
+sequelize.sync({ alter: true })
+  .then(() => console.log('Database schema synced successfully.'))
+  .catch((error) => console.error('Error syncing database schema:', error));
 
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-cache');
@@ -134,6 +102,7 @@ const authenticate = async (req, res, next) => {
   const credentials = basicAuth(req);
   if (!credentials || !credentials.name || !credentials.pass) {
     logger.warn('Authentication attempt failed: Invalid credentials provided');
+    sendMetric('authentication_failure', 1, 'count'); // Metric for authentication failure
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
@@ -141,20 +110,24 @@ const authenticate = async (req, res, next) => {
     const user = await db.Account.findOne({ where: { email: credentials.name } });
     if (!user) {
       logger.warn(`Authentication attempt failed: User not found for email ${credentials.name}`);
+      sendMetric('authentication_failure', 1, 'count'); // Metric for authentication failure
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isPasswordValid = await bcrypt.compare(credentials.pass, user.password);
     if (!isPasswordValid) {
       logger.warn(`Authentication attempt failed: Invalid password for email ${credentials.name}`);
+      sendMetric('authentication_failure', 1, 'count'); // Metric for authentication failure
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     req.user = user;
     logger.info(`User ${user.id} authenticated successfully`);
+    sendMetric('authentication_success', 1, 'count'); // Metric for successful authentication
     next();
   } catch (error) {
     logger.error(`Authentication error: ${error.message}`);
+    sendMetric('authentication_error', 1, 'count'); // Metric for authentication error
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -274,62 +247,20 @@ app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, 
   }
 });
 
-
-
-app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // Log the request to upload a profile picture
-    logger.info(`User ${userId} is attempting to upload a profile picture.`);
-
-    // Retrieve the user's current profile
-    const userProfile = await db.Account.findOne({ where: { id: userId } });
-
-    // Check if the user already has a profile picture
-    if (userProfile && userProfile.imageKey) {
-      logger.warn(`User ${userId} already has a profile picture. Attempted upload rejected.`);
-      return res.status(400).json({ error: 'Profile picture already exists. Please delete the existing picture before uploading a new one.' });
-    }
-
-    // Store the new image key in the user's profile in the database
-    await db.Account.update(
-      { imageKey: req.file.key }, // Assuming your Account model has an imageKey field
-      { where: { id: userId } }
-    );
-
-    logger.info(`Profile picture uploaded successfully for user ${userId}: ${req.file.key}`);
-    res.status(201).json({ message: 'Profile picture uploaded successfully', imageKey: req.file.key });
-  } catch (error) {
-    logger.error(`Error uploading profile picture for user ${userId}:`, error);
-    res.status(500).json({ error: 'Error uploading profile picture' });
-  }
-});
-
-
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
-
-if (!S3_BUCKET_NAME) {
-  console.error("Error: S3_BUCKET_NAME is not defined in environment variables.");
-  process.exit(1); // Exit the application if bucket name is missing
-}
-
-
-const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
-
-
 app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
+  const userId = req.user.id;
+  const startTime = Date.now(); // Start timing the request
+
+  // Log the request to delete the profile picture
+  logger.info(`User ${userId} is attempting to delete their profile picture.`);
+
   try {
-    const userId = req.user.id;
-
-    // Log the request to delete the profile picture
-    logger.info(`User ${userId} is attempting to delete their profile picture.`);
-
     // Retrieve the image key from your database
     const userProfile = await db.Account.findOne({ where: { id: userId } });
-    
+
     if (!userProfile || !userProfile.imageKey) {
       logger.warn(`User ${userId} attempted to delete a non-existing profile picture.`);
+      sendMetric('profile_picture_delete_nonexistent', 1); // Increment non-existent delete metric
       return res.status(404).json({ error: 'Profile picture not found' });
     }
 
@@ -348,10 +279,15 @@ app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
       { where: { id: userId } }
     );
 
+    const duration = Date.now() - startTime; // Calculate duration
     logger.info(`Profile picture deleted successfully for user ${userId}: ${userProfile.imageKey}`);
+    sendMetric('profile_picture_delete_success', 1); // Increment successful delete metric
+    sendMetric('profile_picture_delete_duration', duration, 'timing'); // Log duration
+
     res.status(204).send(); // No content
   } catch (error) {
     logger.error(`Error deleting profile picture for user ${userId}:`, error);
+    sendMetric('profile_picture_delete_errors', 1); // Increment error count
     res.status(500).json({ error: 'Error deleting profile picture' });
   }
 });
@@ -366,6 +302,7 @@ app.get('/v1/user/self', authenticate, (req, res) => {
     account_updated: req.user.account_updated,
   });
 });
+
 
 app.put('/v1/user/self', authenticate, async (req, res) => {
   try {
@@ -412,4 +349,4 @@ module.exports = app;
 
 
 
-module.exports = app;
+
