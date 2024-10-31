@@ -32,6 +32,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
+    imageKey: { // New field for storing the S3 object key
+      type: DataTypes.STRING,
+      allowNull: true, // Allow null initially since not all accounts may have a profile pic
+    },
   });
 
   // Set the account_updated timestamp on update
