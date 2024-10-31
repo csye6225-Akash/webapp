@@ -425,74 +425,40 @@ app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
   }
 });
 
+
+
 app.get('/v1/user/self/pic', authenticate, async (req, res) => {
-  const startTime = Date.now(); // Start timing for metrics
+  const userId = req.user.id;
 
   try {
-    const userId = req.user.id;
-
+    // Retrieve the user's profile
     const userProfile = await db.Account.findOne({ where: { id: userId } });
 
     // Log the retrieved user profile
-    logger.info(`Retrieved user profile for user ${userId}:`, { userProfile });
+    console.log(`Retrieved user profile for user ${userId}:`, userProfile);
 
     if (!userProfile || !userProfile.imageKey) {
-      logger.warn(`Profile picture not found for user ${userId}.`);
       return res.status(404).json({ error: 'Profile picture not found' });
     }
 
-    // Log success and metrics
-    const endTime = Date.now(); // End timing for metrics
-    const duration = endTime - startTime;
+    // Prepare the response object
+    const response = {
+      file_name: userProfile.imageKey.split('/').pop(), // Extracting the file name from the imageKey
+      id: userProfile.imageKey, // Assuming imageKey is unique for the image
+      url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${userProfile.imageKey}`, // Construct the URL
+      upload_date: userProfile.account_created.toISOString().split('T')[0], // Format upload date (assuming it's created at account creation)
+      user_id: userId, // User ID
+    };
 
-    logger.info(`Profile picture retrieved successfully for user ${userId}`, {
-      duration,
-      imageKey: userProfile.imageKey,
-    });
-
-    // Record the metric for successful retrievals
-    await CloudWatch.putMetricData({
-      MetricName: 'ProfilePictureGetSuccess',
-      Namespace: 'YourAppNamespace', // Change to your application namespace
-      Dimensions: [
-        {
-          Name: 'UserId',
-          Value: userId.toString(),
-        },
-      ],
-      Value: 1,
-      Unit: 'Count',
-    }).promise();
-
-    // Respond with the image key or a URL to the image
-    res.status(200).json({ imageKey: userProfile.imageKey });
+    res.status(200).json(response); // Send the response
   } catch (error) {
-    const endTime = Date.now(); // End timing for metrics on error
-    const duration = endTime - startTime;
-
+    console.error('Error retrieving profile picture:', error);
     logger.error(`Error retrieving profile picture for user ${userId}: ${error.message}`, {
-      duration,
-      error: error.stack, // Optionally log the error stack for debugging
+      stack: error.stack // Include the stack trace for debugging
     });
-
-    // Record the metric for failed retrievals
-    await CloudWatch.putMetricData({
-      MetricName: 'ProfilePictureGetFailure',
-      Namespace: 'YourAppNamespace', // Change to your application namespace
-      Dimensions: [
-        {
-          Name: 'UserId',
-          Value: userId.toString(),
-        },
-      ],
-      Value: 1,
-      Unit: 'Count',
-    }).promise();
-
     res.status(500).json({ error: 'Error retrieving profile picture' });
   }
 });
-
 
 
 app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
