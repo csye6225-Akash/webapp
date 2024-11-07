@@ -56,11 +56,24 @@ const health_route = require('./routes/healthz-route.js');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sendMetric = (metricName, value, type = 'count') => {
-  // Implement your metric sending logic here
-  console.log(`Metric sent: ${metricName}, Value: ${value}, Type: ${type}`);
-  // Example: Send to CloudWatch, Prometheus, etc.
+
+
+const sendMetric = (metricName, value = 1, type = 'count') => {
+  switch (type) {
+    case 'count':
+      statsdClient.increment(metricName, value);
+      break;
+    case 'timing':
+      statsdClient.timing(metricName, value);
+      break;
+    case 'gauge':
+      statsdClient.gauge(metricName, value);
+      break;
+    default:
+      console.error(`Unknown metric type: ${type}`);
+  }
 };
+
 
 
 app.use((req, res, next) => {
@@ -281,17 +294,20 @@ const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
 // Your upload route
 app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, res) => {
   const startTime = Date.now(); // Start timing for metrics
+  const userId = req.user.id;
 
   try {
-    const userId = req.user.id;
-
     // Log the uploaded file key
     logger.info(`Uploaded file key: ${req.file.key}`);
+    
+    sendMetric('profile_picture_upload_attempt', 1); // Track upload attempts
 
     const userProfile = await db.Account.findOne({ where: { id: userId } });
+    sendMetric('db_connection_success', 1); // Log DB connection success
 
     if (userProfile && userProfile.imageKey) {
       logger.warn(`User ${userId} attempted to upload a new picture without deleting the old one.`);
+      sendMetric('profile_picture_upload_existing', 1); // Track existing picture error
       return res.status(400).json({ error: 'Profile picture already exists. Please delete the existing picture before uploading a new one.' });
     }
 
@@ -309,18 +325,25 @@ app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, 
       duration, // Log the duration of the operation
     });
 
-    // Record the metric for successful uploads
+    sendMetric('profile_picture_upload_success', 1); // Track successful uploads
+    sendMetric('profile_picture_upload_duration', duration, 'timing'); // Log upload duration
+
+    // Record the CloudWatch metric for successful uploads
     await CloudWatch.putMetricData({
-      MetricName: 'ProfilePictureUploadSuccess',
-      Namespace: 'YourAppNamespace', // Change to your application namespace
-      Dimensions: [
+      MetricData: [
         {
-          Name: 'UserId',
-          Value: userId.toString(),
+          MetricName: 'ProfilePictureUploadSuccess',
+          Namespace: 'YourAppNamespace', // Change to your application namespace
+          Dimensions: [
+            {
+              Name: 'UserId',
+              Value: userId.toString(),
+            },
+          ],
+          Value: 1,
+          Unit: 'Count',
         },
       ],
-      Value: 1,
-      Unit: 'Count',
     }).promise();
 
     res.status(201).json({ message: 'Profile picture uploaded successfully', imageKey: req.file.key });
@@ -333,39 +356,50 @@ app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, 
       error: error.stack, // Optionally log the error stack for debugging
     });
 
-    // Record the metric for failed uploads
+    sendMetric('db_connection_failure', 1); // Track DB connection failure
+    sendMetric('profile_picture_upload_errors', 1); // Track upload errors
+
+    // Record the CloudWatch metric for failed uploads
     await CloudWatch.putMetricData({
-      MetricName: 'ProfilePictureUploadFailure',
-      Namespace: 'YourAppNamespace', // Change to your application namespace
-      Dimensions: [
+      MetricData: [
         {
-          Name: 'UserId',
-          Value: userId.toString(),
+          MetricName: 'ProfilePictureUploadFailure',
+          Namespace: 'YourAppNamespace', // Change to your application namespace
+          Dimensions: [
+            {
+              Name: 'UserId',
+              Value: userId.toString(),
+            },
+          ],
+          Value: 1,
+          Unit: 'Count',
         },
       ],
-      Value: 1,
-      Unit: 'Count',
     }).promise();
 
     res.status(500).json({ error: 'Error uploading profile picture' });
   }
 });
+
 // After updating the profile
 
 
 
 app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
+  const startTime = Date.now(); // Start timing for metrics
   let userId; // Declare userId variable outside the try block
 
   try {
     userId = req.user.id; // Assign userId inside the try block
 
     const userProfile = await db.Account.findOne({ where: { id: userId } });
+    sendMetric('db_connection_success', 1); // Track successful DB connection
 
     // Log the retrieved user profile
     console.log(`Retrieved user profile for user ${userId}:`, userProfile);
 
     if (!userProfile || !userProfile.imageKey) {
+      sendMetric('profile_picture_delete_not_found', 1); // Track not-found errors
       return res.status(404).json({ error: 'Profile picture not found' });
     }
 
@@ -375,90 +409,84 @@ app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
     };
 
     await s3.send(new DeleteObjectCommand(deleteParams));
+    sendMetric('profile_picture_delete_success', 1); // Track successful deletes
 
     await db.Account.update(
       { imageKey: null },
       { where: { id: userId } }
     );
 
+    const duration = Date.now() - startTime; // Calculate duration
+    sendMetric('profile_picture_delete_duration', duration, 'timing'); // Log delete duration
+
     res.status(204).send(); // No content
   } catch (error) {
+    const duration = Date.now() - startTime; // Calculate duration on error
     console.error('Error deleting profile picture:', error);
-    
+
+    sendMetric('db_connection_failure', 1); // Track DB connection failure
+    sendMetric('profile_picture_delete_errors', 1); // Track delete errors
+    sendMetric('profile_picture_delete_duration', duration, 'timing'); // Log duration on error
+
     // Log the error with the userId now accessible
     logger.error(`Error deleting profile picture for user ${userId}: ${error.message}`, {
       stack: error.stack // Include the stack trace for debugging
     });
-    
+
     res.status(500).json({ error: 'Error deleting profile picture' });
   }
 });
 
-
-// Your delete route
-app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const userProfile = await db.Account.findOne({ where: { id: userId } });
-
-    if (!userProfile || !userProfile.imageKey) {
-      return res.status(404).json({ error: 'Profile picture not found' });
-    }
-
-    const deleteParams = {
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: userProfile.imageKey,
-    };
-
-    await s3.send(new DeleteObjectCommand(deleteParams));
-
-    await db.Account.update(
-      { imageKey: null },
-      { where: { id: userId } }
-    );
-
-    res.status(204).send(); // No content
-  } catch (error) {
-    console.error('Error deleting profile picture:', error);
-    res.status(500).json({ error: 'Error deleting profile picture' });
-  }
-});
 
 
 
 app.get('/v1/user/self/pic', authenticate, async (req, res) => {
+  const startTime = Date.now(); // Start timing for metrics
   const userId = req.user.id;
 
   try {
     // Retrieve the user's profile
     const userProfile = await db.Account.findOne({ where: { id: userId } });
+    sendMetric('db_connection_success', 1); // Track successful DB connection
 
     // Log the retrieved user profile
     console.log(`Retrieved user profile for user ${userId}:`, userProfile);
 
     if (!userProfile || !userProfile.imageKey) {
+      sendMetric('profile_picture_retrieve_not_found', 1); // Track not-found cases
       return res.status(404).json({ error: 'Profile picture not found' });
     }
 
     // Prepare the response object
     const response = {
-      file_name: userProfile.imageKey.split('/').pop(), // Extracting the file name from the imageKey
+      file_name: userProfile.imageKey.split('/').pop(), // Extract the file name from the imageKey
       id: userProfile.imageKey, // Assuming imageKey is unique for the image
       url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${userProfile.imageKey}`, // Construct the URL
       upload_date: userProfile.account_created.toISOString().split('T')[0], // Format upload date (assuming it's created at account creation)
       user_id: userId, // User ID
     };
 
+    const duration = Date.now() - startTime; // Calculate duration
+    sendMetric('profile_picture_retrieve_duration', duration, 'timing'); // Log retrieval duration
+
     res.status(200).json(response); // Send the response
   } catch (error) {
+    const duration = Date.now() - startTime; // Calculate duration on error
     console.error('Error retrieving profile picture:', error);
+
+    sendMetric('db_connection_failure', 1); // Track DB connection failure
+    sendMetric('profile_picture_retrieve_errors', 1); // Track retrieval errors
+    sendMetric('profile_picture_retrieve_duration', duration, 'timing'); // Log duration on error
+
+    // Log the error with additional details
     logger.error(`Error retrieving profile picture for user ${userId}: ${error.message}`, {
       stack: error.stack // Include the stack trace for debugging
     });
+
     res.status(500).json({ error: 'Error retrieving profile picture' });
   }
 });
+
 
 
 app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
@@ -550,6 +578,7 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
 
 
 
