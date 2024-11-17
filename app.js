@@ -181,6 +181,29 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+const publishToSNSTopic = async (user) => {
+  const verificationToken = uuid.v4();
+  await saveVerificationToken(user.email, verificationToken);
+ 
+  const message = JSON.stringify({
+    email: user.email,
+    verificationToken: verificationToken,
+  });
+ 
+  const params = {
+    Message: message,
+    TopicArn: process.env.SNS_TOPIC_ARN,
+  };
+ 
+logger.info(`topic arn: ${process.env.SNS_TOPIC_ARN}`);
+ 
+  try {
+    await sns.publish(params).promise();
+    logger.info(`SNS message published for user: ${user.email}`);
+  } catch (error) {
+    logger.error(`Error publishing to SNS: ${error.message}`);
+  }
+};
 app.post('/v1/user', async (req, res) => {
   const startTime = Date.now(); // Start timing the request
 
@@ -242,6 +265,8 @@ app.post('/v1/user', async (req, res) => {
 
     logger.info('User created successfully:', newUser.email); // Log successful user creation
     sendMetric('user_creation_success', 1); // Increment successful creation metric
+
+    await publishToSNSTopic(user);
 
     res.status(201).json({
       id: newUser.id,
