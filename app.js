@@ -3,6 +3,11 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 require('dotenv').config();
 
+const uuid = require('uuid');
+const AWS = require('aws-sdk');
+const sns = new AWS.SNS({ region: process.env.AWS_REGION });
+
+
 
 
 // Configure multer storage
@@ -183,7 +188,7 @@ const authenticate = async (req, res, next) => {
 
 const publishToSNSTopic = async (user) => {
   const verificationToken = uuid.v4();
-  await saveVerificationToken(user.email, verificationToken);
+  //await saveVerificationToken(user.email, verificationToken);
  
   const message = JSON.stringify({
     email: user.email,
