@@ -3,6 +3,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 require('dotenv').config();
 
+
 const uuid = require('uuid');
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ region: process.env.AWS_REGION });
@@ -52,7 +53,8 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const { sequelize } = require('./models/index.js'); 
-const db = require('./models/index.js'); 
+const db = require('./models/index.js');
+const { Account } = db;
 const bcrypt = require('bcryptjs');
 const basicAuth = require('basic-auth');
 const validator = require('validator');
@@ -81,14 +83,14 @@ const sendMetric = (metricName, value = 1, type = 'count') => {
 
 
 
-app.use((req, res, next) => {
-  if (Object.keys(req.query).length !== 0) {
-    logger.warn(`Query parameters are not allowed in the request to ${req.originalUrl}`);
-    sendMetric('query_parameters_rejected', 1, 'count'); // Metric for rejected query parameters
-    return res.status(400).json({ error: 'Query parameters are not allowed' });
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (Object.keys(req.query).length !== 0) {
+//     logger.warn(`Query parameters are not allowed in the request to ${req.originalUrl}`);
+//     sendMetric('query_parameters_rejected', 1, 'count'); // Metric for rejected query parameters
+//     return res.status(400).json({ error: 'Query parameters are not allowed' });
+//   }
+//   next();
+// });
 
 // Middleware to check allowed methods for /v1/user
 app.all('/v1/user', (req, res, next) => {
@@ -301,50 +303,62 @@ app.post('/v1/user', async (req, res) => {
   }
 });
 
+
 const saveVerificationToken = async (email, token) => {
-  // First, delete any existing tokens for this user (to prevent reuse)
-  await VerificationToken.destroy({ where: { email } });
- 
-  // Save the new token
-  return VerificationToken.create({
-    email,
-    token,
-    created_at: new Date(),
-  });
-};
+  const expirationTime = new Date();
+  expirationTime.setHours(expirationTime.getHours() + 1); // Token expires in 1 hour
 
-const verifyUser = async (req, res) => {
-  try {
-    const { user, token } = req.query;
-
-    if (!user || !token) {
-      return res.status(400).json({ message: 'Missing user or token' });
+  // Update the Account with the new verification token and expiration time
+  const [updated] = await Account.update(
+    {
+      verificationToken: token,
+      tokenExpiresAt: expirationTime,
+    },
+    {
+      where: { email },
     }
+  );
 
-    // Retrieve the token record from the database
-    const storedToken = await db.VerificationToken.findOne({ where: { email: user } });
-
-    if (!storedToken) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
-    }
-
-    // Validate the token and check if it has expired
-    if (storedToken.token !== token || new Date() > new Date(storedToken.expires_at)) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
-    }
-
-    // Update the user's `is_verified` field to true
-    await db.Account.update({ is_verified: true }, { where: { email: user } });
-
-    // Remove the used token
-    await db.VerificationToken.destroy({ where: { email: user } });
-
-    res.status(200).json({ message: 'Email verified successfully' });
-  } catch (error) {
-    console.error('Error verifying user:', error);
-    res.status(500).json({ message: 'Internal server error' });
+  if (updated === 0) {
+    throw new Error(`No account found for email: ${email}`);
   }
+
+  return { email, token, tokenExpiresAt: expirationTime };
 };
+
+
+
+
+app.get('/v1/verify', async (req, res) => {
+  const { user, token } = req.query; // Extract query parameters
+
+  if (!user || !token) {
+    return res.status(400).send('User or token missing');
+  }
+
+  try {
+    // Validate the token for the given user
+    const userRecord = await db.Account.findOne({ where: { email: user } });
+
+    if (!userRecord) {
+      return res.status(404).send('User not found');
+    }
+
+    if (userRecord.verificationToken !== token) {
+      return res.status(400).send('Invalid token');
+    }
+
+    // If the token matches, update the user as verified
+    userRecord.isVerified = true;
+    await userRecord.save();
+
+    res.status(200).send('Email successfully verified');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal server error');
+  }
+});
+
 
 
 
@@ -354,8 +368,17 @@ app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, 
   try {
     const userId = req.user.id;
 
-    // Retrieve the user's current profile
+    // Retrieve the user's profile
     const userProfile = await db.Account.findOne({ where: { id: userId } });
+
+    // Check if the user exists and is verified
+    if (!userProfile) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!userProfile.isVerified) {
+      return res.status(400).json({ error: 'Please verify your email before uploading a profile picture.' });
+    }
 
     // Check if the user already has a profile picture
     if (userProfile && userProfile.imageKey) {
@@ -375,6 +398,7 @@ app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, 
     res.status(500).json({ error: 'Error uploading profile picture' });
   }
 });
+
 const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 
