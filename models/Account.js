@@ -36,6 +36,18 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true, // Allow null initially since not all accounts may have a profile pic
     },
+    verificationToken: { // New field for email verification token
+      type: DataTypes.STRING,
+      allowNull: true, // Null initially for verified users
+    },
+    tokenExpiresAt: { // New field for token expiration timestamp
+      type: DataTypes.DATE,
+      allowNull: true, // Null for verified users or no token issued
+    },
+    isVerified: { // Optional field to track verification status
+      type: DataTypes.BOOLEAN,
+      defaultValue: false, // Default to false until verified
+    },
   });
 
   // Set the account_updated timestamp on update
