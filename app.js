@@ -3,6 +3,11 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 require('dotenv').config();
 
+const uuid = require('uuid');
+const AWS = require('aws-sdk');
+const sns = new AWS.SNS({ region: process.env.AWS_REGION });
+
+
 
 const uuid = require('uuid');
 const AWS = require('aws-sdk');
@@ -302,6 +307,52 @@ app.post('/v1/user', async (req, res) => {
     res.status(500).json({ error: 'Failed to create account' });
   }
 });
+
+const saveVerificationToken = async (email, token) => {
+  // First, delete any existing tokens for this user (to prevent reuse)
+  await VerificationToken.destroy({ where: { email } });
+ 
+  // Save the new token
+  return VerificationToken.create({
+    email,
+    token,
+    created_at: new Date(),
+  });
+};
+
+const verifyUser = async (req, res) => {
+  try {
+    const { user, token } = req.query;
+
+    if (!user || !token) {
+      return res.status(400).json({ message: 'Missing user or token' });
+    }
+
+    // Retrieve the token record from the database
+    const storedToken = await db.VerificationToken.findOne({ where: { email: user } });
+
+    if (!storedToken) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Validate the token and check if it has expired
+    if (storedToken.token !== token || new Date() > new Date(storedToken.expires_at)) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Update the user's `is_verified` field to true
+    await db.Account.update({ is_verified: true }, { where: { email: user } });
+
+    // Remove the used token
+    await db.VerificationToken.destroy({ where: { email: user } });
+
+    res.status(200).json({ message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('Error verifying user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 
 
 const saveVerificationToken = async (email, token) => {
