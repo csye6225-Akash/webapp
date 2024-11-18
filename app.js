@@ -285,9 +285,9 @@ app.post('/v1/user', async (req, res) => {
     logger.info('User created successfully:', newUser.email); // Log successful user creation
     sendMetric('user_creation_success', 1); // Increment successful creation metric
 
-    await publishToSNSTopic({
-      email: newUser.email,
-    });
+    // await publishToSNSTopic({
+    //   email: newUser.email,
+    // });
 
   
     await publishToSNSTopic(newUser);
