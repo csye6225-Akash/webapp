@@ -412,97 +412,9 @@ const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 
 // Your upload route
-app.post('/v1/user/self/pic', authenticate, upload.single('image'), async (req, res) => {
-  const startTime = Date.now(); // Start timing for metrics
-  const userId = req.user.id;
 
-  try {
-    // Log the uploaded file key
-    logger.info(`Uploaded file key: ${req.file.key}`);
-    
-    sendMetric('profile_picture_upload_attempt', 1); // Track upload attempts
-
-    const userProfile = await db.Account.findOne({ where: { id: userId } });
-    sendMetric('db_connection_success', 1); // Log DB connection success
-
-    if (userProfile && userProfile.imageKey) {
-      logger.warn(`User ${userId} attempted to upload a new picture without deleting the old one.`);
-      sendMetric('profile_picture_upload_existing', 1); // Track existing picture error
-      return res.status(400).json({ error: 'Profile picture already exists. Please delete the existing picture before uploading a new one.' });
-    }
-
-    await db.Account.update(
-      { imageKey: req.file.key },
-      { where: { id: userId } }
-    );
-
-    const endTime = Date.now(); // End timing for metrics
-    const duration = endTime - startTime;
-
-    // Log successful upload
-    logger.info(`Profile picture uploaded successfully for user ${userId}`, {
-      imageKey: req.file.key,
-      duration, // Log the duration of the operation
-    });
-
-    sendMetric('profile_picture_upload_success', 1); // Track successful uploads
-    sendMetric('profile_picture_upload_duration', duration, 'timing'); // Log upload duration
-
-    // Record the CloudWatch metric for successful uploads
-    await CloudWatch.putMetricData({
-      MetricData: [
-        {
-          MetricName: 'ProfilePictureUploadSuccess',
-          Namespace: 'YourAppNamespace', // Change to your application namespace
-          Dimensions: [
-            {
-              Name: 'UserId',
-              Value: userId.toString(),
-            },
-          ],
-          Value: 1,
-          Unit: 'Count',
-        },
-      ],
-    }).promise();
-
-    res.status(201).json({ message: 'Profile picture uploaded successfully', imageKey: req.file.key });
-  } catch (error) {
-    const endTime = Date.now(); // End timing for metrics on error
-    const duration = endTime - startTime;
-
-    logger.error(`Error uploading profile picture for user ${userId}: ${error.message}`, {
-      duration,
-      error: error.stack, // Optionally log the error stack for debugging
-    });
-
-    sendMetric('db_connection_failure', 1); // Track DB connection failure
-    sendMetric('profile_picture_upload_errors', 1); // Track upload errors
-
-    // Record the CloudWatch metric for failed uploads
-    await CloudWatch.putMetricData({
-      MetricData: [
-        {
-          MetricName: 'ProfilePictureUploadFailure',
-          Namespace: 'YourAppNamespace', // Change to your application namespace
-          Dimensions: [
-            {
-              Name: 'UserId',
-              Value: userId.toString(),
-            },
-          ],
-          Value: 1,
-          Unit: 'Count',
-        },
-      ],
-    }).promise();
-
-    res.status(500).json({ error: 'Error uploading profile picture' });
-  }
-});
 
 // After updating the profile
-
 
 
 app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
@@ -518,11 +430,19 @@ app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
     // Log the retrieved user profile
     console.log(`Retrieved user profile for user ${userId}:`, userProfile);
 
+    // Check if the user's email is verified
+    if (!userProfile.isVerified) {
+      sendMetric('profile_picture_delete_unverified', 1); // Track unverified user attempts
+      return res.status(403).json({ error: 'Please verify your email before using this API.' });
+    }
+
+    // If no image found
     if (!userProfile || !userProfile.imageKey) {
       sendMetric('profile_picture_delete_not_found', 1); // Track not-found errors
       return res.status(404).json({ error: 'Profile picture not found' });
     }
 
+    // Delete image from S3
     const deleteParams = {
       Bucket: process.env.S3_BUCKET_NAME,
       Key: userProfile.imageKey,
@@ -531,6 +451,7 @@ app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
     await s3.send(new DeleteObjectCommand(deleteParams));
     sendMetric('profile_picture_delete_success', 1); // Track successful deletes
 
+    // Update the user profile to remove the image key
     await db.Account.update(
       { imageKey: null },
       { where: { id: userId } }
@@ -572,6 +493,13 @@ app.get('/v1/user/self/pic', authenticate, async (req, res) => {
     // Log the retrieved user profile
     console.log(`Retrieved user profile for user ${userId}:`, userProfile);
 
+    // Check if the user's email is verified
+    if (!userProfile.isVerified) {
+      sendMetric('profile_picture_retrieve_unverified', 1); // Track unverified user attempts
+      return res.status(403).json({ error: 'Please verify your email before accessing this API.' });
+    }
+
+    // Check if profile picture exists
     if (!userProfile || !userProfile.imageKey) {
       sendMetric('profile_picture_retrieve_not_found', 1); // Track not-found cases
       return res.status(404).json({ error: 'Profile picture not found' });
@@ -609,66 +537,64 @@ app.get('/v1/user/self/pic', authenticate, async (req, res) => {
 
 
 
-app.delete('/v1/user/self/pic', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.id;
 
-    // Retrieve the image key from your database
+
+
+app.get('/v1/user/self', authenticate, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Retrieve the user's profile
     const userProfile = await db.Account.findOne({ where: { id: userId } });
 
-    console.log(`Retrieved image key: ${userProfile?.imageKey}`); // Log the retrieved image key
+    // Check if the user's email is verified
+    if (!userProfile.isVerified) {
+      sendMetric('user_profile_retrieve_unverified', 1); // Track unverified user attempts
+      return res.status(403).json({ error: 'Please verify your email before accessing this API.' });
+    }
 
-    // if (!userProfile || !userProfile.imageKey) {
-    //   return res.status(404).json({ error: 'Profile picture not found' });
-    // }
-
-    // Delete the image from S3
-    await s3.deleteObject({
-      Bucket: process.env.S3_BUCKET_NAME, // Make sure to use the environment variable here
-      Key: userProfile.imageKey
-    }).promise();
-
-    // Optionally, remove the image key from the user's record in the database
-    await db.Account.update(
-      { imageKey: null },
-      { where: { id: userId } }
-    );
-
-    res.status(204).send(); // No content
+    // Send the user profile details
+    res.status(200).json({
+      id: userProfile.id,
+      email: userProfile.email,
+      first_name: userProfile.first_name,
+      last_name: userProfile.last_name,
+      account_created: userProfile.account_created,
+      account_updated: userProfile.account_updated,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error deleting profile picture' });
+    console.error('Error retrieving user profile:', error);
+    sendMetric('user_profile_retrieve_errors', 1); // Track retrieval errors
+    res.status(500).json({ error: 'Error retrieving user profile' });
   }
 });
 
 
 
-
-app.get('/v1/user/self', authenticate, (req, res) => {
-  res.status(200).json({
-    id: req.user.id,
-    email: req.user.email,
-    first_name: req.user.first_name,
-    last_name: req.user.last_name,
-    account_created: req.user.account_created,
-    account_updated: req.user.account_updated,
-  });
-});
-
-
 app.put('/v1/user/self', authenticate, async (req, res) => {
+  const userId = req.user.id;
+
   try {
+    // Retrieve the user's profile
+    const userProfile = await db.Account.findOne({ where: { id: userId } });
+
+    // Check if the user's email is verified
+    if (!userProfile.isVerified) {
+      sendMetric('user_profile_update_unverified', 1); // Track unverified user attempts
+      return res.status(403).json({ error: 'Please verify your email before updating your profile.' });
+    }
+
     const { first_name, last_name, password, email } = req.body;
 
     // Check if no fields are provided to update
     if (!first_name && !last_name && !password) {
-      logger.warn(`User ${req.user.id} attempted to update with no fields`);
+      logger.warn(`User ${userId} attempted to update with no fields`);
       return res.status(400).json({ error: 'No fields to update' });
     }
 
     // Prevent email update
     if (email) {
-      logger.warn(`User ${req.user.id} attempted to update email, which is not allowed`);
+      logger.warn(`User ${userId} attempted to update email, which is not allowed`);
       return res.status(400).json({ error: 'Email cannot be updated' });
     }
 
@@ -678,14 +604,15 @@ app.put('/v1/user/self', authenticate, async (req, res) => {
     if (password) updateData.password = await bcrypt.hash(password, 10);
 
     await req.user.update(updateData);
-    logger.info(`User ${req.user.id} updated their profile successfully`);
+    logger.info(`User ${userId} updated their profile successfully`);
 
     res.status(204).send();
   } catch (error) {
-    logger.error(`Failed to update account for user ${req.user.id}: ${error.message}`);
+    logger.error(`Failed to update account for user ${userId}: ${error.message}`);
     res.status(500).json({ error: 'Failed to update account' });
   }
 });
+
 
 // Middleware for handling 404 errors
 app.use('/*', (req, res) => {
