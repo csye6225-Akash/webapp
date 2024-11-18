@@ -188,7 +188,10 @@ const authenticate = async (req, res, next) => {
 
 const publishToSNSTopic = async (user) => {
   const verificationToken = uuid.v4();
-  //await saveVerificationToken(user.email, verificationToken);
+  const tokenExpiry = new Date(Date.now() + 2 * 60 * 1000);
+
+  await saveVerificationToken(user.email, verificationToken);
+  
  
   const message = JSON.stringify({
     email: user.email,
@@ -279,6 +282,10 @@ app.post('/v1/user', async (req, res) => {
       email: newUser.email,
     });
 
+  
+    await publishToSNSTopic(newUser);
+
+
     res.status(201).json({
       id: newUser.id,
       email: newUser.email,
@@ -293,6 +300,18 @@ app.post('/v1/user', async (req, res) => {
     res.status(500).json({ error: 'Failed to create account' });
   }
 });
+
+const saveVerificationToken = async (email, token) => {
+  // First, delete any existing tokens for this user (to prevent reuse)
+  await VerificationToken.destroy({ where: { email } });
+ 
+  // Save the new token
+  return VerificationToken.create({
+    email,
+    token,
+    created_at: new Date(),
+  });
+};
 
 const verifyUser = async (req, res) => {
   try {
