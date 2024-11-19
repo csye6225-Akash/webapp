@@ -313,7 +313,7 @@ app.post('/v1/user', async (req, res) => {
 
 const saveVerificationToken = async (email, token) => {
   const expirationTime = new Date();
-  expirationTime.setHours(expirationTime.getHours() + 1); // Token expires in 1 hour
+  expirationTime.setMinutes(expirationTime.getMinutes() + 2); // Token expires in 1 hour
 
   // Update the Account with the new verification token and expiration time
   const [updated] = await Account.update(
@@ -353,6 +353,10 @@ app.get('/v1/verify', async (req, res) => {
 
     if (userRecord.verificationToken !== token) {
       return res.status(400).send('Invalid token');
+    }
+
+    if (new Date() > userRecord.tokenExpiresAt) {
+      return res.status(400).send('Token has expired');
     }
 
     // If the token matches, update the user as verified
