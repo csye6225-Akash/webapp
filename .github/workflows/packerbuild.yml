@@ -2,49 +2,39 @@ name: Build AMI Packer
 
 on: 
   push:
-     branches:
+    branches:
       - main
-
 
 jobs:
   ami-build:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the code
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # - name: Setup Environment Variables
-      #   run: |
-      #     touch .env
-      #     echo "DEVDB=${{vars.DEVDB}}" >> .env
-      #     echo "DEVPASSWORD=${{vars.DEVPASSWORD}}" >> .env
-      #     echo "DEVUSERNAME=${{vars.DEVUSERNAME}}" >> .env
-      #     echo "DEVHOST=${{vars.DEVHOST}}" >> .env
-
-      # - name: Copy webapp files
-      #   run: rsync -arv --exclude='.git/' --exclude='.github/' --exclude='.gitignore' . ./webapp && ls -R
-
-      # - name: Create Directory (if needed)
-      #   run: mkdir -p webapp 
-
-      - name: creating a zip
-        # uses: montudor/action-zip@v1
+      # Step 2: Create a ZIP of the project files (optional)
+      - name: Creating a ZIP
         run: zip -r webapp.zip .
-      
-      - name: AWS Configure
+
+      # Step 3: Configure AWS credentials for the AMI creation account
+      - name: AWS Configure for AMI Account
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
-      - name: Build AMI
+      # Step 4: Build AMI with Packer
+      - name: Build AMI and Extract AMI ID
+        id: build-ami
         run: |
-          packer init aws.pkr.hcl
-          packer fmt aws.pkr.hcl
-          packer validate aws.pkr.hcl
-          packer build aws.pkr.hcl
+          PACKER_OUTPUT=$(packer build aws.pkr.hcl)
+          echo "Packer Output: $PACKER_OUTPUT"  # For debugging
+          AMI_ID=$(echo "$PACKER_OUTPUT" | grep -oP 'AMI: \K(ami-[a-zA-Z0-9]+)')
+          echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
+          echo "::set-output name=ami_id::$AMI_ID"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -55,3 +45,106 @@ jobs:
           PKR_VAR_ssh_username: "${{ secrets.SSH_USERNAME }}"
           PKR_VAR_aws_profile: "${{ secrets.aws_profile }}"
           PKR_VAR_ami_users: "${{ secrets.ami_users }}"
+
+      # Step 5: Configure AWS credentials for the Demo account
+      - name: AWS Configure for Demo Account
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.DEMO_ACCOUNT_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.DEMO_ACCOUNT_SECRET_KEY }}
+          aws-region: us-west-2
+
+      # Step 6: Check if the launch template exists
+      - name: Check Launch Template Existence in Demo Account
+        id: check-template-demo
+        run: |
+          TEMPLATE_EXISTS="false"
+          if aws ec2 describe-launch-templates --launch-template-names ${{ secrets.LT_NAME }} --query 'LaunchTemplates[0]' --output text; then
+            TEMPLATE_EXISTS="true"
+          fi
+          echo "TEMPLATE_EXISTS=$TEMPLATE_EXISTS" >> $GITHUB_ENV
+
+      # Step 7: Update Launch Template with the new AMI ID
+      - name: Update Launch Template
+        if: env.TEMPLATE_EXISTS == 'true'
+        run: |
+          aws ec2 create-launch-template-version --launch-template-name ${{ secrets.LT_NAME }} --source-version "\$Default" --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
+
+      # Step 8: Refresh Auto-Scaling Group
+      - name: Refresh Auto-Scaling Group
+        if: env.TEMPLATE_EXISTS == 'true'
+        run: |
+          aws autoscaling start-instance-refresh --auto-scaling-group-name ${{ secrets.ASG_NAME }} --strategy "Rolling"
+          
+          while : ; do
+            STATUS=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name ${{ secrets.ASG_NAME }} --query 'InstanceRefreshes[0].Status' --output text)
+            if [[ "$STATUS" == "Successful" ]]; then
+              echo "Instance refresh completed with status: $STATUS"
+              break
+            elif [[ "$STATUS" == "Cancelled" ]]; then
+              echo "Instance refresh failed"
+              exit 1
+            else
+              echo "Waiting for instance refresh..."
+              sleep 30
+            fi
+          done
+
+
+# name: Build AMI Packer
+
+# on: 
+#   push:
+#      branches:
+#       - main
+
+
+# jobs:
+#   ami-build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v2
+
+#       # - name: Setup Environment Variables
+#       #   run: |
+#       #     touch .env
+#       #     echo "DEVDB=${{vars.DEVDB}}" >> .env
+#       #     echo "DEVPASSWORD=${{vars.DEVPASSWORD}}" >> .env
+#       #     echo "DEVUSERNAME=${{vars.DEVUSERNAME}}" >> .env
+#       #     echo "DEVHOST=${{vars.DEVHOST}}" >> .env
+
+#       # - name: Copy webapp files
+#       #   run: rsync -arv --exclude='.git/' --exclude='.github/' --exclude='.gitignore' . ./webapp && ls -R
+
+#       # - name: Create Directory (if needed)
+#       #   run: mkdir -p webapp 
+
+#       - name: creating a zip
+#         # uses: montudor/action-zip@v1
+#         run: zip -r webapp.zip .
+      
+#       - name: AWS Configure
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+#           aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+#           aws-region: us-east-2
+
+#       - name: Build AMI
+#         run: |
+#           packer init aws.pkr.hcl
+#           packer fmt aws.pkr.hcl
+#           packer validate aws.pkr.hcl
+#           packer build aws.pkr.hcl
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           AMI_USER_DEMO: ${{secrets.AMI_USER_DEMO}} 
+#           PKR_VAR_aws_region: "${{ secrets.AWS_REGION }}"
+#           PKR_VAR_source_ami: "${{ vars.SOURCE_AMI }}"
+#           PKR_VAR_subnet_id: "${{ secrets.SUBNET_ID }}"
+#           PKR_VAR_ssh_username: "${{ secrets.SSH_USERNAME }}"
+#           PKR_VAR_aws_profile: "${{ secrets.aws_profile }}"
+#           PKR_VAR_ami_users: "${{ secrets.ami_users }}"
