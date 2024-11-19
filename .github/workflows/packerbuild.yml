@@ -25,11 +25,12 @@ jobs:
       - name: Build AMI and Extract AMI ID
         id: build-ami
         run: |
-          PACKER_OUTPUT=$(packer build aws.pkr.hcl)
-          echo "Packer Output: $PACKER_OUTPUT"  # For debugging
-          AMI_ID=$(echo "$PACKER_OUTPUT" | grep -oP 'AMI: \K(ami-[a-zA-Z0-9]+)')
+          packer build aws.pkr.hcl | tee packer-output.log
+          AMI_ID=$(grep -oP 'AMI: \K(ami-[a-zA-Z0-9]+)' packer-output.log)
+          echo "AMI_ID=$AMI_ID"
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
           echo "::set-output name=ami_id::$AMI_ID"
+
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
