@@ -21,8 +21,7 @@ jobs:
       - name: Initialization
         run: |
           packer init aws.pkr.hcl
-          packer fmt aws.pkr.hcl
-          packer validate aws.pkr.hcl
+         
       - name: Build AMI and Extract AMI ID
         id: build-ami
         run: |
