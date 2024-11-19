@@ -10,12 +10,11 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-
-     - name: Waiting for integration test
-      uses: lewagon/wait-on-check-action@v1.3.1
-      with: 
+      - name: Waiting for integration test
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with: null
         ref: ${{ github.ref }}
-        check-name: 'CI'
+        check-name: CI
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         wait-interval: 20
         allowed-conclusions: success
@@ -30,7 +29,6 @@ jobs:
       - name: Initialization
         run: |
           packer init aws.pkr.hcl
-         
       - name: Build AMI and Extract AMI ID
         id: build-ami
         run: |
@@ -39,7 +37,6 @@ jobs:
           echo "AMI_ID=$AMI_ID"
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
           echo "::set-output name=ami_id::$AMI_ID"
-
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
