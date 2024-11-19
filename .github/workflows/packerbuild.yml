@@ -10,6 +10,15 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+
+     - name: Waiting for integration test
+      uses: lewagon/wait-on-check-action@v1.3.1
+      with: 
+        ref: ${{ github.ref }}
+        check-name: 'CI'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 20
+        allowed-conclusions: success
       - name: Creating a ZIP
         run: zip -r webapp.zip .
       - name: AWS Configure for AMI Account
