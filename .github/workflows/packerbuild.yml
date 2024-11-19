@@ -30,6 +30,9 @@ jobs:
       - name: Build AMI and Extract AMI ID
         id: build-ami
         run: |
+          packer init aws.pkr.hcl
+          packer fmt aws.pkr.hcl
+          packer validate aws.pkr.hcl
           PACKER_OUTPUT=$(packer build aws.pkr.hcl)
           echo "Packer Output: $PACKER_OUTPUT"  # For debugging
           AMI_ID=$(echo "$PACKER_OUTPUT" | grep -oP 'AMI: \K(ami-[a-zA-Z0-9]+)')
