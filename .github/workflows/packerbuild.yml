@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Waiting for integration test
         uses: lewagon/wait-on-check-action@v1.3.1
-        with: null
+        with: 
         ref: ${{ github.ref }}
         check-name: CI
         repo-token: ${{ secrets.GITHUB_TOKEN }}
