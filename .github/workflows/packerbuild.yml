@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  checks: write      # Allows you to access the check run information
+  contents: read     # To fetch the repository content
+  actions: write 
+
 jobs:
   ami-build:
     runs-on: ubuntu-latest
