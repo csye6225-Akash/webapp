@@ -219,7 +219,7 @@ logger.info(`topic arn: ${process.env.SNS_TOPIC_ARN}`);
     logger.error(`Error publishing to SNS: ${error.message}`);
   }
 };
-app.post('/v1/user', async (req, res) => {
+app.post('/v2/user', async (req, res) => {
   const startTime = Date.now(); // Start timing the request
 
   try {
